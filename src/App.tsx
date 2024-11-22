@@ -8,9 +8,7 @@ const Layout: FC = (props) => {
   );
 };
 
-export const Top: FC<{ messages: string[] }> = (
-  props: { messages: string[] },
-) => {
+export const Top: FC<{ messages: string[] }> = (props: { messages: string[] }) => {
   return (
     <Layout>
       <h1>Hello Hono!</h1>

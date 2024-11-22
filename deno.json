@@ -3,6 +3,9 @@
     "jsx": "precompile",
     "jsxImportSource": "hono/jsx"
   },
+  "fmt": {
+    "lineWidth": 160
+  },
   "unstable": ["cron", "kv"],
   "tasks": {
     "db:init": "rm ./db/*.db && deno run -A ./db/db.ts init",

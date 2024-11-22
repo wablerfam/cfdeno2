@@ -1,4 +1,4 @@
-import { ulid } from "jsr:@std/ulid";
+import { ulid } from "@std/ulid";
 import { err, ok } from "neverthrow";
 import { InferOutput, safeParse } from "valibot";
 

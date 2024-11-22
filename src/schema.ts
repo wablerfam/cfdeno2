@@ -1,21 +1,23 @@
-import { email, object, string, pipe, number, isoTimestamp } from "valibot";
+import { email, isoTimestamp, number, object, pipe, string, ulid } from "valibot";
+
+const IdSchema = pipe(string(), ulid());
 
 const UserSchema = object({
-  id: string(),
+  id: IdSchema,
   email: pipe(string(), email()),
   houseId: string(),
 });
 
 const HouseSchema = object({
-  id: string(),
+  id: IdSchema,
   name: string(),
 });
 
 const RoomSchema = object({
-  id: string(),
+  id: IdSchema,
   name: string(),
   sensorId: string(),
-  houseId: string(),
+  houseId: IdSchema,
 });
 
 const RoomConditionSchema = object({
@@ -25,7 +27,7 @@ const RoomConditionSchema = object({
 
 const RoomLog = object({
   condition: RoomConditionSchema,
-  roomId: string(),
+  roomId: IdSchema,
   createdAt: pipe(string(), isoTimestamp()),
 });
 
