@@ -1,4 +1,4 @@
-// import "./cron.ts";
+import "./cron.ts";
 import app from "./server.tsx";
 
 export default app;

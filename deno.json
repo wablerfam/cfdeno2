@@ -10,17 +10,19 @@
   "tasks": {
     "db:init": "rm ./db/*.db && deno run -A ./db/db.ts init",
     "db:read": "deno run -A ./db/db.ts read",
-    "dev": "deno serve -A --watch ./src/server.tsx"
+    "tailwind:watch": "deno run -A npm:tailwindcss -i ./src/input.css -o ./public/styles.css --minify --watch",
+    "dev": "deno task tailwind:watch & deno serve -A --watch ./src/server.tsx"
   },
   "imports": {
     "@std/ulid": "jsr:@std/ulid@^1.0.0",
     "hono": "npm:hono@^4.6.11",
     "neverthrow": "npm:neverthrow@^8.1.1",
+    "tailwindcss": "npm:tailwindcss@^3.4.15",
     "valibot": "npm:valibot@0.42.1"
   },
   "deploy": {
     "project": "7cc9038a-008c-4b55-9da4-a85933b4f163",
-    "exclude": ["**/node_modules"],
+    "exclude": ["./db/"],
     "include": [],
     "entrypoint": "src/main.ts"
   }
