@@ -1,4 +1,4 @@
-import { email, isoTimestamp, number, object, pipe, string, ulid } from "valibot";
+import { email, InferOutput, isoTimestamp, number, object, pipe, string, ulid } from "valibot";
 
 const IdSchema = pipe(string(), ulid());
 
@@ -37,4 +37,12 @@ export const Schema = {
   Room: RoomSchema,
   RoomCondition: RoomConditionSchema,
   RoomLog: RoomLog,
+};
+
+export type Model = {
+  User: InferOutput<typeof Schema.User>;
+  House: InferOutput<typeof Schema.House>;
+  Room: InferOutput<typeof Schema.Room>;
+  RoomCondition: InferOutput<typeof Schema.RoomCondition>;
+  RoomLog: InferOutput<typeof Schema.RoomLog>;
 };

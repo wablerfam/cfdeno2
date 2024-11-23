@@ -17,5 +17,11 @@
     "hono": "npm:hono@^4.6.11",
     "neverthrow": "npm:neverthrow@^8.1.1",
     "valibot": "npm:valibot@0.42.1"
+  },
+  "deploy": {
+    "project": "7cc9038a-008c-4b55-9da4-a85933b4f163",
+    "exclude": ["**/node_modules"],
+    "include": [],
+    "entrypoint": "src/main.ts"
   }
 }

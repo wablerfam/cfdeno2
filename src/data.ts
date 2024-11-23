@@ -1,16 +1,8 @@
 import { ulid } from "@std/ulid";
 import { err, ok } from "neverthrow";
-import { InferOutput, safeParse } from "valibot";
+import { safeParse } from "valibot";
 
-import { Schema } from "./schema.ts";
-
-type Model = {
-  User: InferOutput<typeof Schema.User>;
-  House: InferOutput<typeof Schema.House>;
-  Room: InferOutput<typeof Schema.Room>;
-  RoomCondition: InferOutput<typeof Schema.RoomCondition>;
-  RoomLog: InferOutput<typeof Schema.RoomLog>;
-};
+import { Model, Schema } from "./schema.ts";
 
 const kv = await Deno.openKv("./db/kv.db");
 
@@ -37,7 +29,7 @@ const findAllRooms = async () => {
 
 const addRoomLog = async (roomLog: Model["RoomLog"]) => {
   await kv.set(["room_log", roomLog.createdAt], roomLog);
-  return ok(undefined);
+  return ok(null);
 };
 
 const getRoomCondition = async (sensorId: Model["Room"]["sensorId"]) => {

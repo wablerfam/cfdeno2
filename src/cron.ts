@@ -1,11 +1,5 @@
-import { InferOutput } from "valibot";
-
 import { data } from "./data.ts";
-import { Schema } from "./schema.ts";
-
-type Model = {
-  RoomLog: InferOutput<typeof Schema.RoomLog>;
-};
+import { Model } from "./schema.ts";
 
 Deno.cron("Log a message", "* * * * *", async () => {
   const rooms = await data.findAllRooms();
