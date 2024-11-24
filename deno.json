@@ -14,6 +14,8 @@
     "dev": "deno task tailwind:watch & deno serve -A --watch ./src/server.tsx"
   },
   "imports": {
+    "@simplewebauthn/server": "npm:@simplewebauthn/server@^11.0.0",
+    "@simplewebauthn/types": "npm:@simplewebauthn/types@^11.0.0",
     "@std/ulid": "jsr:@std/ulid@^1.0.0",
     "hono": "npm:hono@^4.6.11",
     "neverthrow": "npm:neverthrow@^8.1.1",

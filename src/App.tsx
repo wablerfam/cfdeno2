@@ -5,24 +5,31 @@ const Layout: FC = (props) => {
     <html lang="en">
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <link rel="stylesheet" href="/public/styles.css" />
+      <script src="https://unpkg.com/@simplewebauthn/browser@11.0.0/dist/bundle/index.umd.min.js"></script>
+      <script src="/script.js"></script>
+      <link rel="stylesheet" href="/styles.css" />
       <title>hello deno</title>
       <body>{props.children}</body>
     </html>
   );
 };
 
-export const Top: FC<{ messages: string[] }> = (props: { messages: string[] }) => {
+export const Top: FC = () => {
   return (
     <Layout>
-      <h1 class="text-2xl font-bold underline">
-        Hello world!
-      </h1>
-      <ul>
-        {props.messages.map((message) => {
-          return <li>{message}!!</li>;
-        })}
-      </ul>
+      <body>
+        <main>
+          ユーザ名：<input type="text" id="userName" />
+          <button onClick="register()" className="button">
+            登録
+          </button>
+          <button onClick="verify()" className="button">
+            認証
+          </button>
+          <br />
+          <a href="/restricted">要認証のコンテンツを表示</a>
+        </main>
+      </body>
     </Layout>
   );
 };
