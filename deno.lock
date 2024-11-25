@@ -4,6 +4,8 @@
     "jsr:@deno/cache-dir@0.13.2": "0.13.2",
     "jsr:@deno/emit@*": "0.46.0",
     "jsr:@deno/graph@~0.73.1": "0.73.1",
+    "jsr:@kt3k/cell@~0.7.6": "0.7.6",
+    "jsr:@kt3k/signal@0.3": "0.3.0",
     "jsr:@luca/esbuild-deno-loader@0.11": "0.11.0",
     "jsr:@std/assert@0.223": "0.223.0",
     "jsr:@std/bytes@0.223": "0.223.0",
@@ -46,6 +48,15 @@
     },
     "@deno/graph@0.73.1": {
       "integrity": "cd69639d2709d479037d5ce191a422eabe8d71bb68b0098344f6b07411c84d41"
+    },
+    "@kt3k/cell@0.7.6": {
+      "integrity": "f5b7bdf5a75d434959d14d6fa2d426d976ed84f8a8d7d7a60ccd76683bf2deb3",
+      "dependencies": [
+        "jsr:@kt3k/signal"
+      ]
+    },
+    "@kt3k/signal@0.3.0": {
+      "integrity": "5279863b78cbe475a8606864122abaad600e508e08eec7fff126f05c81aad7ff"
     },
     "@luca/esbuild-deno-loader@0.11.0": {
       "integrity": "c05a989aa7c4ee6992a27be5f15cfc5be12834cab7ff84cabb47313737c51a2c",
@@ -890,6 +901,7 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@kt3k/cell@~0.7.6",
       "jsr:@luca/esbuild-deno-loader@0.11",
       "jsr:@std/ulid@1",
       "npm:@simplewebauthn/browser@11.0.0",

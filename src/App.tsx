@@ -6,7 +6,6 @@ const Layout: FC = (props) => {
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <script src="/js/script.js" type="module"></script>
-      <link rel="stylesheet" href="/styles.css" />
       <title>hello deno</title>
       <body>{props.children}</body>
     </html>
@@ -17,12 +16,12 @@ export const Top: FC = () => {
   return (
     <Layout>
       <body>
-        <main>
-          ユーザ名：<input type="text" id="userName" />
-          <button onClick="register()" className="button">
+        <main class="auth">
+          ユーザ名：<input type="text" class="userName" />
+          <button class="register">
             登録
           </button>
-          <button onClick="verify()" className="button">
+          <button class="verify">
             認証
           </button>
           <br />
