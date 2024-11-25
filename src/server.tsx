@@ -3,12 +3,15 @@ import { ulid } from "@std/ulid";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import { serveStatic } from "hono/deno";
+import { logger } from "hono/logger";
 
 import { Top } from "./App.tsx";
 import { authData } from "./data.ts";
 import { AuthModel } from "./schema.ts";
 
 export const app = new Hono();
+
+app.use(logger());
 
 app.use("*", serveStatic({ root: "./public" }));
 
@@ -28,7 +31,7 @@ auth.get("/attestation/option", async (c) => {
     rpName: "My WebAuthn App",
     rpID: "localhost",
     userName: userName,
-    excludeCredentials: passkeys.map((passkey) => ({ id: passkey.credentialId })),
+    excludeCredentials: passkeys.value.map((passkey) => ({ id: passkey.credentialId })),
     authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
   });
 
@@ -41,13 +44,13 @@ auth.post("/attestation/result", async (c) => {
   const { userName, body } = await c.req.json();
 
   const challenge = await authData.findChallenge(userName);
-  if (!challenge) {
+  if (!challenge.value) {
     throw new Error("No challenge exists.");
   }
 
   const verification = await verifyRegistrationResponse({
     response: body,
-    expectedChallenge: challenge,
+    expectedChallenge: challenge.value,
     expectedOrigin: "http://localhost:8000",
     expectedRPID: "localhost",
   });
@@ -78,7 +81,7 @@ auth.get("/assertion/option", async (c) => {
 
   const options = await generateAuthenticationOptions({
     rpID: "localhost",
-    allowCredentials: passkeys.map((passkey) => ({
+    allowCredentials: passkeys.value.map((passkey) => ({
       id: passkey.credentialId,
     })),
   });
@@ -90,18 +93,23 @@ auth.get("/assertion/option", async (c) => {
 
 auth.post("/assertion/result", async (c) => {
   const { userName, body } = await c.req.json();
-  const challenge = await authData.findChallenge(userName);
+
   const passkeys = await authData.findPasskeys(userName);
-  const passkey = passkeys.find(
+  const passkey = passkeys.value.find(
     ({ credentialId }) => credentialId === body.id,
   );
   if (!passkey) {
     throw new Error(`No passkey exists.`);
   }
 
+  const challenge = await authData.findChallenge(userName);
+  if (!challenge.value) {
+    throw new Error("No challenge exists.");
+  }
+
   const verification = await verifyAuthenticationResponse({
     response: body,
-    expectedChallenge: challenge!,
+    expectedChallenge: challenge.value,
     expectedOrigin: "http://localhost:8000",
     expectedRPID: "localhost",
     credential: {
@@ -148,7 +156,11 @@ app.get("/restricted", async (c) => {
   }
 
   const session = await authData.getSession(sessionId);
-  const userName = session?.userName;
+  if (!session.value) {
+    throw new Error("No session exists.");
+  }
+
+  const userName = session.value.userName;
   if (!userName) {
     return c.text("Unauthorized", 401);
   }

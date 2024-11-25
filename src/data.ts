@@ -64,20 +64,21 @@ export const data = {
   getRoomCondition: getRoomCondition,
 };
 
-const findPasskeys = async (userName: string): Promise<AuthModel["Passkey"][]> => {
+const findPasskeys = async (userName: string) => {
   const entries = kv.list<AuthModel["Passkey"]>({ prefix: ["passkey", userName] });
   const passkeys: AuthModel["Passkey"][] = [];
   for await (const entry of entries) {
     passkeys.push(entry.value);
   }
-  return passkeys;
+  return ok(passkeys);
 };
 
-const addPasskey = async (passkey: AuthModel["Passkey"]): Promise<undefined> => {
+const addPasskey = async (passkey: AuthModel["Passkey"]) => {
   await kv.set(["passkey", passkey.userName, passkey.id], passkey);
+  return ok(null);
 };
 
-const updatePasskey = async (passkey: AuthModel["Passkey"]): Promise<undefined> => {
+const updatePasskey = async (passkey: AuthModel["Passkey"]) => {
   const key = ["passkey", passkey.userName, passkey.id];
 
   // const existingEntry = await kv.get<AuthModel["Passkey"]>(key);
@@ -87,24 +88,27 @@ const updatePasskey = async (passkey: AuthModel["Passkey"]): Promise<undefined> 
   // }
 
   await kv.set(key, passkey);
+  return ok(null);
 };
 
-const findChallenge = async (userName: string): Promise<AuthModel["Challenge"] | null> => {
+const findChallenge = async (userName: string) => {
   const entry = await kv.get<AuthModel["Challenge"]>(["challenge", userName]);
-  return entry.value;
+  return ok(entry.value);
 };
 
-const addChallenge = async (userName: string, challenge: AuthModel["Challenge"]): Promise<undefined> => {
+const addChallenge = async (userName: string, challenge: AuthModel["Challenge"]) => {
   await kv.set(["challenge", userName], challenge);
+  return ok(null);
 };
 
 const getSession = async (sessionId: string) => {
   const entry = await kv.get<AuthModel["Session"]>(["session", sessionId]);
-  return entry.value;
+  return ok(entry.value);
 };
 
 const setSession = async (session: AuthModel["Session"]) => {
   await kv.set(["session", session.id], session);
+  return ok(null);
 };
 
 export const authData = {
