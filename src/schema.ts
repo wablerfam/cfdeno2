@@ -1,4 +1,4 @@
-import { email, InferOutput, isoTimestamp, number, object, pipe, string, ulid } from "valibot";
+import { email, InferOutput, instance, isoTimestamp, number, object, pipe, string, ulid, union } from "valibot";
 
 const IdSchema = pipe(string(), ulid());
 
@@ -45,4 +45,32 @@ export type Model = {
   Room: InferOutput<typeof Schema.Room>;
   RoomCondition: InferOutput<typeof Schema.RoomCondition>;
   RoomLog: InferOutput<typeof Schema.RoomLog>;
+};
+
+const PasskeySchema = object({
+  id: string(),
+  credentialId: string(),
+  publicKey: union([instance(Uint8Array)]),
+  userName: string(),
+  counter: number(),
+});
+
+const ChallengeSchema = string();
+
+const SessionSchema = object({
+  id: string(),
+  userName: string(),
+  expirationTtl: number(),
+});
+
+export const AuthSchema = {
+  Passkey: PasskeySchema,
+  Challenge: ChallengeSchema,
+  Session: SessionSchema,
+};
+
+export type AuthModel = {
+  Passkey: InferOutput<typeof AuthSchema.Passkey>;
+  Challenge: InferOutput<typeof AuthSchema.Challenge>;
+  Session: InferOutput<typeof AuthSchema.Session>;
 };

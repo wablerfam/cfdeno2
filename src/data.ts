@@ -2,7 +2,7 @@ import { ulid } from "@std/ulid";
 import { err, ok } from "neverthrow";
 import { safeParse } from "valibot";
 
-import { Model, Schema } from "./schema.ts";
+import { AuthModel, Model, Schema } from "./schema.ts";
 
 const kv = await Deno.openKv("./db/kv.db");
 
@@ -62,4 +62,57 @@ export const data = {
   findAllRooms: findAllRooms,
   addRoomLog: addRoomLog,
   getRoomCondition: getRoomCondition,
+};
+
+const findPasskeys = async (userName: string): Promise<AuthModel["Passkey"][]> => {
+  const entries = kv.list<AuthModel["Passkey"]>({ prefix: ["passkey", userName] });
+  const passkeys: AuthModel["Passkey"][] = [];
+  for await (const entry of entries) {
+    passkeys.push(entry.value);
+  }
+  return passkeys;
+};
+
+const addPasskey = async (passkey: AuthModel["Passkey"]): Promise<undefined> => {
+  await kv.set(["passkey", passkey.userName, passkey.id], passkey);
+};
+
+const updatePasskey = async (passkey: AuthModel["Passkey"]): Promise<undefined> => {
+  const key = ["passkey", passkey.userName, passkey.id];
+
+  // const existingEntry = await kv.get<AuthModel["Passkey"]>(key);
+
+  // if (existingEntry.value) {
+  //   throw new Error(`Passkey with ID ${passkey.id} already exists for user ${passkey.userName}.`);
+  // }
+
+  await kv.set(key, passkey);
+};
+
+const findChallenge = async (userName: string): Promise<AuthModel["Challenge"] | null> => {
+  const entry = await kv.get<AuthModel["Challenge"]>(["challenge", userName]);
+  return entry.value;
+};
+
+const addChallenge = async (userName: string, challenge: AuthModel["Challenge"]): Promise<undefined> => {
+  await kv.set(["challenge", userName], challenge);
+};
+
+const getSession = async (sessionId: string) => {
+  const entry = await kv.get<AuthModel["Session"]>(["session", sessionId]);
+  return entry.value;
+};
+
+const setSession = async (session: AuthModel["Session"]) => {
+  await kv.set(["session", session.id], session);
+};
+
+export const authData = {
+  findPasskeys: findPasskeys,
+  addPasskey: addPasskey,
+  updatePasskey: updatePasskey,
+  findChallenge: findChallenge,
+  addChallenge: addChallenge,
+  getSession: getSession,
+  setSession: setSession,
 };
