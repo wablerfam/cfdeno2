@@ -5,8 +5,7 @@ const Layout: FC = (props) => {
     <html lang="en">
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <script src="https://unpkg.com/@simplewebauthn/browser@11.0.0/dist/bundle/index.umd.min.js"></script>
-      <script src="/script.js"></script>
+      <script src="/js/script.js" type="module"></script>
       <link rel="stylesheet" href="/styles.css" />
       <title>hello deno</title>
       <body>{props.children}</body>

@@ -1,3 +1,5 @@
+import * as SimpleWebAuthnBrowser from "@simplewebauthn/browser";
+
 const register = async () => {
   try {
     const userName = document.getElementById("userName").value;
@@ -58,3 +60,6 @@ const verify = async () => {
     alert(`認証に失敗しました: ${e}`);
   }
 };
+
+globalThis.register = register;
+globalThis.verify = verify;
