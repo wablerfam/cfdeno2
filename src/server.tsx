@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import { serveStatic } from "hono/deno";
 import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
 
 import { Top } from "./App.tsx";
@@ -76,7 +77,7 @@ const auth = new Hono().basePath("/auth")
 
     const challenge = await authData.findChallenge(userName);
     if (!challenge.value) {
-      throw new Error("No challenge exists.");
+      throw new HTTPException(404, { message: "No challenge exists" });
     }
 
     const verification = await verifyRegistrationResponse({
@@ -87,7 +88,7 @@ const auth = new Hono().basePath("/auth")
     });
 
     if (!verification.verified) {
-      throw new Error("Not verified.");
+      throw new HTTPException(401, { message: "Not verified" });
     }
 
     const { credential } = verification.registrationInfo!;
@@ -128,12 +129,12 @@ const auth = new Hono().basePath("/auth")
       ({ credentialId }) => credentialId === body.id,
     );
     if (!passkey) {
-      throw new Error(`No passkey exists.`);
+      throw new HTTPException(404, { message: "No passkey exists" });
     }
 
     const challenge = await authData.findChallenge(userName);
     if (!challenge.value) {
-      throw new Error("No challenge exists.");
+      throw new HTTPException(404, { message: "No challenge exists" });
     }
 
     const verification = await verifyAuthenticationResponse({

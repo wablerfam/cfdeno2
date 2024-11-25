@@ -18,6 +18,9 @@ const Auth = ({ on, query }: Context) => {
     const optionsResponse = await authClient.auth.attestation.option.$get(
       { query: { userName: userName } },
     );
+    if (!optionsResponse.ok) {
+      alert(`認証に失敗しました: ${await optionsResponse.text()}`);
+    }
     const { options } = await optionsResponse.json();
 
     const startRegistrationAsync = ResultAsync.fromThrowable(SimpleWebAuthnBrowser.startRegistration);
@@ -35,6 +38,9 @@ const Auth = ({ on, query }: Context) => {
         headers: { "Content-Type": "application/json" },
       },
     );
+    if (!verificationResponse.ok) {
+      alert(`認証に失敗しました: ${await verificationResponse.text()}`);
+    }
 
     const verification = await verificationResponse.json();
     if (!verification.verified) {
@@ -55,6 +61,9 @@ const Auth = ({ on, query }: Context) => {
     const optionsResponse = await authClient.auth.assertion.option.$get(
       { query: { userName: userName } },
     );
+    if (!optionsResponse.ok) {
+      alert(`認証に失敗しました: ${await optionsResponse.text()}`);
+    }
     const { options } = await optionsResponse.json();
 
     const startAuthenticationAsync = ResultAsync.fromThrowable(SimpleWebAuthnBrowser.startAuthentication);
@@ -72,6 +81,9 @@ const Auth = ({ on, query }: Context) => {
         headers: { "Content-Type": "application/json" },
       },
     );
+    if (!verificationResponse.ok) {
+      alert(`認証に失敗しました: ${await verificationResponse.text()}`);
+    }
 
     const verification = await verificationResponse.json();
 
