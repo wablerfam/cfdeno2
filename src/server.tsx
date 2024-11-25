@@ -11,6 +11,7 @@ import { logger } from "hono/logger";
 
 import { Top } from "./App.tsx";
 import { authData } from "./data.ts";
+import { env } from "./env.ts";
 import { AuthModel } from "./schema.ts";
 
 type EsbuildOptions = {
@@ -62,7 +63,7 @@ const auth = new Hono().basePath("/auth")
 
     const options = await generateRegistrationOptions({
       rpName: "My WebAuthn App",
-      rpID: "localhost",
+      rpID: env.API_DOMAIN,
       userName: userName,
       excludeCredentials: passkeys.value.map((passkey) => ({ id: passkey.credentialId })),
       authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
@@ -83,8 +84,8 @@ const auth = new Hono().basePath("/auth")
     const verification = await verifyRegistrationResponse({
       response: body,
       expectedChallenge: challenge.value,
-      expectedOrigin: "http://localhost:8000",
-      expectedRPID: "localhost",
+      expectedOrigin: env.API_ORIGIN,
+      expectedRPID: env.API_DOMAIN,
     });
 
     if (!verification.verified) {
@@ -111,7 +112,7 @@ const auth = new Hono().basePath("/auth")
     const passkeys = await authData.findPasskeys(userName);
 
     const options = await generateAuthenticationOptions({
-      rpID: "localhost",
+      rpID: env.API_DOMAIN,
       allowCredentials: passkeys.value.map((passkey) => ({
         id: passkey.credentialId,
       })),
@@ -140,8 +141,8 @@ const auth = new Hono().basePath("/auth")
     const verification = await verifyAuthenticationResponse({
       response: body,
       expectedChallenge: challenge.value,
-      expectedOrigin: "http://localhost:8000",
-      expectedRPID: "localhost",
+      expectedOrigin: env.API_ORIGIN,
+      expectedRPID: env.API_DOMAIN,
       credential: {
         id: passkey.credentialId,
         publicKey: passkey.publicKey,

@@ -1,6 +1,6 @@
 import { ulid } from "@std/ulid";
 import { err, ok } from "neverthrow";
-import { safeParse } from "valibot";
+import * as v from "valibot";
 
 import { AuthModel, Model, Schema } from "./schema.ts";
 
@@ -46,7 +46,7 @@ const getRoomCondition = async (sensorId: Model["Room"]["sensorId"]) => {
   //     temperature: json[0]?.newest_events?.te?.val,
   //     humidity: json[0]?.newest_events?.hu?.val,
   //   };
-  const roomCondition = safeParse(Schema["RoomCondition"], {
+  const roomCondition = v.safeParse(Schema["RoomCondition"], {
     temperature: json[0]?.temperature_offset,
     humidity: json[0]?.humidity_offset,
   });
