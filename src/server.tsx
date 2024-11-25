@@ -53,134 +53,132 @@ app.get("/", (c) => {
   return c.html(<Top messages={messages} />);
 });
 
-const auth = new Hono().basePath("/auth");
+const auth = new Hono().basePath("/auth")
+  .get("/attestation/option", async (c) => {
+    const { userName } = c.req.query();
 
-auth.get("/attestation/option", async (c) => {
-  const { userName } = c.req.query();
+    const passkeys = await authData.findPasskeys(userName);
 
-  const passkeys = await authData.findPasskeys(userName);
-
-  const options = await generateRegistrationOptions({
-    rpName: "My WebAuthn App",
-    rpID: "localhost",
-    userName: userName,
-    excludeCredentials: passkeys.value.map((passkey) => ({ id: passkey.credentialId })),
-    authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
-  });
-
-  await authData.addChallenge(userName, options.challenge);
-
-  return c.json({ status: "success", options });
-});
-
-auth.post("/attestation/result", async (c) => {
-  const { userName, body } = await c.req.json();
-
-  const challenge = await authData.findChallenge(userName);
-  if (!challenge.value) {
-    throw new Error("No challenge exists.");
-  }
-
-  const verification = await verifyRegistrationResponse({
-    response: body,
-    expectedChallenge: challenge.value,
-    expectedOrigin: "http://localhost:8000",
-    expectedRPID: "localhost",
-  });
-
-  if (!verification.verified) {
-    throw new Error("Not verified.");
-  }
-
-  const { credential } = verification.registrationInfo!;
-
-  const passkey: AuthModel["Passkey"] = {
-    id: credential.id,
-    credentialId: credential.id,
-    publicKey: credential.publicKey,
-    userName: userName,
-    counter: credential.counter,
-  };
-
-  await authData.addPasskey(passkey);
-
-  return c.json({ verified: true });
-});
-
-auth.get("/assertion/option", async (c) => {
-  const { userName } = c.req.query();
-
-  const passkeys = await authData.findPasskeys(userName);
-
-  const options = await generateAuthenticationOptions({
-    rpID: "localhost",
-    allowCredentials: passkeys.value.map((passkey) => ({
-      id: passkey.credentialId,
-    })),
-  });
-
-  await authData.addChallenge(userName, options.challenge);
-
-  return c.json({ status: "success", options });
-});
-
-auth.post("/assertion/result", async (c) => {
-  const { userName, body } = await c.req.json();
-
-  const passkeys = await authData.findPasskeys(userName);
-  const passkey = passkeys.value.find(
-    ({ credentialId }) => credentialId === body.id,
-  );
-  if (!passkey) {
-    throw new Error(`No passkey exists.`);
-  }
-
-  const challenge = await authData.findChallenge(userName);
-  if (!challenge.value) {
-    throw new Error("No challenge exists.");
-  }
-
-  const verification = await verifyAuthenticationResponse({
-    response: body,
-    expectedChallenge: challenge.value,
-    expectedOrigin: "http://localhost:8000",
-    expectedRPID: "localhost",
-    credential: {
-      id: passkey.credentialId,
-      publicKey: passkey.publicKey,
-      counter: passkey.counter,
-    },
-  });
-
-  const verified = verification.verified;
-
-  if (verified) {
-    const newPasskey = structuredClone(passkey);
-    passkey.counter = verification.authenticationInfo.newCounter;
-    await authData.updatePasskey(newPasskey);
-  }
-
-  if (verified) {
-    const ttl = 60 * 60 * 24;
-    const sessionId = ulid();
-    setCookie(c, "session_id", sessionId, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: ttl,
-      path: "/",
+    const options = await generateRegistrationOptions({
+      rpName: "My WebAuthn App",
+      rpID: "localhost",
+      userName: userName,
+      excludeCredentials: passkeys.value.map((passkey) => ({ id: passkey.credentialId })),
+      authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
     });
 
-    const session: AuthModel["Session"] = {
-      id: sessionId,
-      userName: userName,
-      expirationTtl: ttl,
-    };
-    await authData.setSession(session);
-  }
+    await authData.addChallenge(userName, options.challenge);
 
-  return c.json({ verified: verified });
-});
+    return c.json({ status: "success", options });
+  })
+  .post("/attestation/result", async (c) => {
+    const { userName, body } = await c.req.json();
+
+    const challenge = await authData.findChallenge(userName);
+    if (!challenge.value) {
+      throw new Error("No challenge exists.");
+    }
+
+    const verification = await verifyRegistrationResponse({
+      response: body,
+      expectedChallenge: challenge.value,
+      expectedOrigin: "http://localhost:8000",
+      expectedRPID: "localhost",
+    });
+
+    if (!verification.verified) {
+      throw new Error("Not verified.");
+    }
+
+    const { credential } = verification.registrationInfo!;
+
+    const passkey: AuthModel["Passkey"] = {
+      id: credential.id,
+      credentialId: credential.id,
+      publicKey: credential.publicKey,
+      userName: userName,
+      counter: credential.counter,
+    };
+
+    await authData.addPasskey(passkey);
+
+    return c.json({ verified: true });
+  })
+  .get("/assertion/option", async (c) => {
+    const { userName } = c.req.query();
+
+    const passkeys = await authData.findPasskeys(userName);
+
+    const options = await generateAuthenticationOptions({
+      rpID: "localhost",
+      allowCredentials: passkeys.value.map((passkey) => ({
+        id: passkey.credentialId,
+      })),
+    });
+
+    await authData.addChallenge(userName, options.challenge);
+
+    return c.json({ status: "success", options });
+  })
+  .post("/assertion/result", async (c) => {
+    const { userName, body } = await c.req.json();
+
+    const passkeys = await authData.findPasskeys(userName);
+    const passkey = passkeys.value.find(
+      ({ credentialId }) => credentialId === body.id,
+    );
+    if (!passkey) {
+      throw new Error(`No passkey exists.`);
+    }
+
+    const challenge = await authData.findChallenge(userName);
+    if (!challenge.value) {
+      throw new Error("No challenge exists.");
+    }
+
+    const verification = await verifyAuthenticationResponse({
+      response: body,
+      expectedChallenge: challenge.value,
+      expectedOrigin: "http://localhost:8000",
+      expectedRPID: "localhost",
+      credential: {
+        id: passkey.credentialId,
+        publicKey: passkey.publicKey,
+        counter: passkey.counter,
+      },
+    });
+
+    const verified = verification.verified;
+
+    if (verified) {
+      const newPasskey = structuredClone(passkey);
+      passkey.counter = verification.authenticationInfo.newCounter;
+      await authData.updatePasskey(newPasskey);
+    }
+
+    if (verified) {
+      const ttl = 60 * 60 * 24;
+      const sessionId = ulid();
+      setCookie(c, "session_id", sessionId, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+        maxAge: ttl,
+        path: "/",
+      });
+
+      const session: AuthModel["Session"] = {
+        id: sessionId,
+        userName: userName,
+        expirationTtl: ttl,
+      };
+      await authData.setSession(session);
+    }
+
+    return c.json({ verified: verified });
+  });
+
+export type AuthAppType = typeof auth;
 
 app.get("/restricted", async (c) => {
   const sessionId = getCookie(c, "session_id");
@@ -190,7 +188,7 @@ app.get("/restricted", async (c) => {
 
   const session = await authData.getSession(sessionId);
   if (!session.value) {
-    throw new Error("No session exists.");
+    return c.text("Unauthorized. No session exists", 401);
   }
 
   const userName = session.value.userName;
