@@ -1,5 +1,5 @@
 import { data } from "./data.ts";
-import { Model } from "./schema.ts";
+import { MemberModel } from "./schema.ts";
 
 Deno.cron("Log a message", "* * * * *", async () => {
   const rooms = await data.findAllRooms();
@@ -9,7 +9,7 @@ Deno.cron("Log a message", "* * * * *", async () => {
       return roomCondition.error;
     }
 
-    const roomLog: Model["RoomLog"] = {
+    const roomLog: MemberModel["RoomLog"] = {
       condition: roomCondition.value.output,
       roomId: room.id,
       createdAt: new Date().toISOString(),

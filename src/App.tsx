@@ -16,12 +16,12 @@ export const Top: FC = () => {
   return (
     <Layout>
       <body>
-        <main class="auth">
+        <main class="js-auth">
           ユーザ名：<input type="text" class="userName" />
-          <button class="register">
+          <button class="js-register">
             登録
           </button>
-          <button class="verify">
+          <button class="js-verify">
             認証
           </button>
           <br />

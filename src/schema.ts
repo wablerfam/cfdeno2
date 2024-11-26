@@ -1,4 +1,4 @@
-import * as v from "valibot";
+import * as v from "@valibot/valibot";
 
 const IdSchema = v.pipe(v.string(), v.ulid());
 
@@ -31,7 +31,7 @@ const RoomLog = v.object({
   createdAt: v.pipe(v.string(), v.isoTimestamp()),
 });
 
-export const Schema = {
+export const MemberSchema = {
   User: UserSchema,
   House: HouseSchema,
   Room: RoomSchema,
@@ -39,12 +39,12 @@ export const Schema = {
   RoomLog: RoomLog,
 };
 
-export type Model = {
-  User: v.InferOutput<typeof Schema.User>;
-  House: v.InferOutput<typeof Schema.House>;
-  Room: v.InferOutput<typeof Schema.Room>;
-  RoomCondition: v.InferOutput<typeof Schema.RoomCondition>;
-  RoomLog: v.InferOutput<typeof Schema.RoomLog>;
+export type MemberModel = {
+  User: v.InferOutput<typeof MemberSchema.User>;
+  House: v.InferOutput<typeof MemberSchema.House>;
+  Room: v.InferOutput<typeof MemberSchema.Room>;
+  RoomCondition: v.InferOutput<typeof MemberSchema.RoomCondition>;
+  RoomLog: v.InferOutput<typeof MemberSchema.RoomLog>;
 };
 
 const PasskeySchema = v.object({

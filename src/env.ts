@@ -1,4 +1,4 @@
-import * as v from "valibot";
+import * as v from "@valibot/valibot";
 
 const Env = v.object({
   API_DOMAIN: v.string(),

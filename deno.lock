@@ -7,6 +7,9 @@
     "jsr:@kt3k/cell@~0.7.6": "0.7.6",
     "jsr:@kt3k/signal@0.3": "0.3.0",
     "jsr:@luca/esbuild-deno-loader@0.11": "0.11.0",
+    "jsr:@simplewebauthn/browser@12": "12.0.0",
+    "jsr:@simplewebauthn/server@12": "12.0.0",
+    "jsr:@simplewebauthn/types@12": "12.0.0",
     "jsr:@std/assert@0.223": "0.223.0",
     "jsr:@std/bytes@0.223": "0.223.0",
     "jsr:@std/bytes@^1.0.2": "1.0.4",
@@ -18,15 +21,20 @@
     "jsr:@std/path@^1.0.6": "1.0.8",
     "jsr:@std/ulid@*": "1.0.0",
     "jsr:@std/ulid@1": "1.0.0",
-    "npm:@simplewebauthn/browser@11.0.0": "11.0.0",
-    "npm:@simplewebauthn/server@11": "11.0.0",
-    "npm:@simplewebauthn/types@11": "11.0.0",
+    "jsr:@valibot/valibot@~0.42.1": "0.42.1",
+    "npm:@hexagon/base64@^1.1.27": "1.1.28",
+    "npm:@levischuck/tiny-cbor@~0.2.2": "0.2.2",
+    "npm:@peculiar/asn1-android@^2.3.10": "2.3.13",
+    "npm:@peculiar/asn1-ecc@^2.3.8": "2.3.14",
+    "npm:@peculiar/asn1-rsa@^2.3.8": "2.3.13",
+    "npm:@peculiar/asn1-schema@^2.3.8": "2.3.13",
+    "npm:@peculiar/asn1-x509@^2.3.8": "2.3.13",
+    "npm:cross-fetch@4": "4.0.0",
     "npm:esbuild@0.24": "0.24.0",
-    "npm:hono@^4.6.11": "4.6.11",
+    "npm:hono@^4.6.12": "4.6.12",
     "npm:neverthrow@^8.1.1": "8.1.1",
     "npm:tailwindcss@*": "3.4.15_postcss@8.4.49",
-    "npm:tailwindcss@^3.4.15": "3.4.15_postcss@8.4.49",
-    "npm:valibot@0.42.1": "0.42.1"
+    "npm:tailwindcss@^3.4.15": "3.4.15_postcss@8.4.49"
   },
   "jsr": {
     "@deno/cache-dir@0.13.2": {
@@ -66,6 +74,29 @@
         "jsr:@std/path@^1.0.6"
       ]
     },
+    "@simplewebauthn/browser@12.0.0": {
+      "integrity": "e5341f2fd2f3daf81d3d27463f91226c7bf6fe7f8707140726251d87e95c5c34",
+      "dependencies": [
+        "jsr:@simplewebauthn/types"
+      ]
+    },
+    "@simplewebauthn/server@12.0.0": {
+      "integrity": "7c9f7914b08937d441908a90b9ec41579185bcedb0c7f07686e61b272d21438a",
+      "dependencies": [
+        "jsr:@simplewebauthn/types",
+        "npm:@hexagon/base64",
+        "npm:@levischuck/tiny-cbor",
+        "npm:@peculiar/asn1-android",
+        "npm:@peculiar/asn1-ecc",
+        "npm:@peculiar/asn1-rsa",
+        "npm:@peculiar/asn1-schema",
+        "npm:@peculiar/asn1-x509",
+        "npm:cross-fetch"
+      ]
+    },
+    "@simplewebauthn/types@12.0.0": {
+      "integrity": "fd5c9890c4e96111cc01a4f85748fea8dd7dc4c448cd741704a9137c606724a8"
+    },
     "@std/assert@0.223.0": {
       "integrity": "eb8d6d879d76e1cc431205bd346ed4d88dc051c6366365b1af47034b0670be24"
     },
@@ -102,6 +133,9 @@
     },
     "@std/ulid@1.0.0": {
       "integrity": "d41c3d27a907714413649fee864b7cde8d42ee68437d22b79d5de4f81d808780"
+    },
+    "@valibot/valibot@0.42.1": {
+      "integrity": "ba0f6f7964aaeec0e4b1f793d575061f325ae6254cbb9d7ff01fb65068a0a23b"
     }
   },
   "npm": {
@@ -287,29 +321,6 @@
     },
     "@rollup/rollup-linux-x64-gnu@4.27.3": {
       "integrity": "sha512-/6bn6pp1fsCGEY5n3yajmzZQAh+mW4QPItbiWxs69zskBzJuheb3tNynEjL+mKOsUSFK11X4LYF2BwwXnzWleA=="
-    },
-    "@simplewebauthn/browser@11.0.0": {
-      "integrity": "sha512-KEGCStrl08QC2I561BzxqGiwoknblP6O1YW7jApdXLPtIqZ+vgJYAv8ssLCdm1wD8HGAHd49CJLkUF8X70x/pg==",
-      "dependencies": [
-        "@simplewebauthn/types"
-      ]
-    },
-    "@simplewebauthn/server@11.0.0": {
-      "integrity": "sha512-zu8dxKcPiRUNSN2kmrnNOzNbRI8VaR/rL4ENCHUfC6PEE7SAAdIql9g5GBOd/wOVZolIsaZz3ccFxuGoVP0iaw==",
-      "dependencies": [
-        "@hexagon/base64",
-        "@levischuck/tiny-cbor",
-        "@peculiar/asn1-android",
-        "@peculiar/asn1-ecc",
-        "@peculiar/asn1-rsa",
-        "@peculiar/asn1-schema",
-        "@peculiar/asn1-x509",
-        "@simplewebauthn/types",
-        "cross-fetch"
-      ]
-    },
-    "@simplewebauthn/types@11.0.0": {
-      "integrity": "sha512-b2o0wC5u2rWts31dTgBkAtSNKGX0cvL6h8QedNsKmj8O4QoLFQFR3DBVBUlpyVEhYKA+mXGUaXbcOc4JdQ3HzA=="
     },
     "ansi-regex@5.0.1": {
       "integrity": "sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ=="
@@ -518,8 +529,8 @@
         "function-bind"
       ]
     },
-    "hono@4.6.11": {
-      "integrity": "sha512-f0LwJQFKdUUrCUAVowxSvNCjyzI7ZLt8XWYU/EApyeq5FfOvHFarBaE5rjU9HTNFk4RI0FkdB2edb3p/7xZjzQ=="
+    "hono@4.6.12": {
+      "integrity": "sha512-eHtf4kSDNw6VVrdbd5IQi16r22m3s7mWPLd7xOMhg1a/Yyb1A0qpUFq8xYMX4FMuDe1nTKeMX5rTx7Nmw+a+Ag=="
     },
     "ipaddr.js@2.2.0": {
       "integrity": "sha512-Ag3wB2o37wslZS19hZqorUnrnzSkpOVy+IiiDEiTqNubEYpYuHWIf6K4psgN2ZWKExS4xhVCrRVfb/wfW8fWJA=="
@@ -860,9 +871,6 @@
     "util-deprecate@1.0.2": {
       "integrity": "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw=="
     },
-    "valibot@0.42.1": {
-      "integrity": "sha512-3keXV29Ar5b//Hqi4MbSdV7lfVp6zuYLZuA9V1PvQUsXqogr+u5lvLPLk3A4f74VUXDnf/JfWMN6sB+koJ/FFw=="
-    },
     "webidl-conversions@3.0.1": {
       "integrity": "sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ=="
     },
@@ -903,15 +911,14 @@
     "dependencies": [
       "jsr:@kt3k/cell@~0.7.6",
       "jsr:@luca/esbuild-deno-loader@0.11",
+      "jsr:@simplewebauthn/browser@12",
+      "jsr:@simplewebauthn/server@12",
       "jsr:@std/ulid@1",
-      "npm:@simplewebauthn/browser@11.0.0",
-      "npm:@simplewebauthn/server@11",
-      "npm:@simplewebauthn/types@11",
+      "jsr:@valibot/valibot@~0.42.1",
       "npm:esbuild@0.24",
-      "npm:hono@^4.6.11",
+      "npm:hono@^4.6.12",
       "npm:neverthrow@^8.1.1",
-      "npm:tailwindcss@^3.4.15",
-      "npm:valibot@0.42.1"
+      "npm:tailwindcss@^3.4.15"
     ]
   }
 }

@@ -8,7 +8,7 @@ import { AuthAppType } from "./server.tsx";
 const authClient = hc<AuthAppType>("/");
 
 const Auth = ({ on, query }: Context) => {
-  on("click", ".register", async () => {
+  on("click", ".js-register", async () => {
     const userName = query<HTMLInputElement>(".userName")?.value;
     if (!userName) {
       alert("名前を入れてください");
@@ -51,7 +51,7 @@ const Auth = ({ on, query }: Context) => {
     alert("登録に成功しました");
   });
 
-  on("click", ".verify", async () => {
+  on("click", ".js-verify", async () => {
     const userName = query<HTMLInputElement>(".userName")?.value;
     if (!userName) {
       alert("名前を入れてください");
@@ -96,4 +96,4 @@ const Auth = ({ on, query }: Context) => {
   });
 };
 
-register(Auth, "auth");
+register(Auth, "js-auth");

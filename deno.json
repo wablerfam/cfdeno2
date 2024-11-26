@@ -16,15 +16,14 @@
   "imports": {
     "@kt3k/cell": "jsr:@kt3k/cell@^0.7.6",
     "@luca/esbuild-deno-loader": "jsr:@luca/esbuild-deno-loader@^0.11.0",
-    "@simplewebauthn/browser": "npm:@simplewebauthn/browser@11.0.0",
-    "@simplewebauthn/server": "npm:@simplewebauthn/server@^11.0.0",
-    "@simplewebauthn/types": "npm:@simplewebauthn/types@^11.0.0",
+    "@simplewebauthn/browser": "jsr:@simplewebauthn/browser@^12.0.0",
+    "@simplewebauthn/server": "jsr:@simplewebauthn/server@^12.0.0",
     "@std/ulid": "jsr:@std/ulid@^1.0.0",
+    "@valibot/valibot": "jsr:@valibot/valibot@^0.42.1",
     "esbuild": "npm:esbuild@^0.24.0",
-    "hono": "npm:hono@^4.6.11",
+    "hono": "npm:hono@^4.6.12",
     "neverthrow": "npm:neverthrow@^8.1.1",
-    "tailwindcss": "npm:tailwindcss@^3.4.15",
-    "valibot": "npm:valibot@0.42.1"
+    "tailwindcss": "npm:tailwindcss@^3.4.15"
   },
   "deploy": {
     "project": "7cc9038a-008c-4b55-9da4-a85933b4f163",
