@@ -25,6 +25,7 @@ export const JSBundler = async (options: EsbuildOptions) => {
     entryPoints: options.entryPoints,
     outdir: options.outdir,
     bundle: true,
+    minify: true,
     format: "esm",
     write: false,
   });
