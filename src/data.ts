@@ -2,9 +2,10 @@ import { ulid } from "@std/ulid";
 import * as v from "@valibot/valibot";
 import { err, ok } from "neverthrow";
 
+import { env } from "./env.ts";
 import { AuthModel, MemberModel, MemberSchema } from "./schema.ts";
 
-const kv = await Deno.openKv("./db/kv.db");
+export const kv = await Deno.openKv(env.DATABASE_URL ?? undefined);
 
 const findUserByEmail = async (email: MemberModel["User"]["email"]) => {
   const user: MemberModel["User"] = {
@@ -57,7 +58,7 @@ const getRoomCondition = async (sensorId: MemberModel["Room"]["sensorId"]) => {
   return ok(roomCondition);
 };
 
-export const data = {
+export const memberData = {
   findUserByEmail: findUserByEmail,
   findAllRooms: findAllRooms,
   addRoomLog: addRoomLog,
