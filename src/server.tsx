@@ -1,11 +1,8 @@
-import { denoPlugins } from "@luca/esbuild-deno-loader";
 import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
 import { ulid } from "@std/ulid";
-import * as esbuild from "esbuild";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import { serveStatic } from "hono/deno";
-import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
 
@@ -14,42 +11,11 @@ import { authData } from "./data.ts";
 import { env } from "./env.ts";
 import { AuthModel } from "./schema.ts";
 
-type EsbuildOptions = {
-  entryPoints: string[];
-  outdir: string;
-};
-
-export const JSBundler = async (options: EsbuildOptions) => {
-  const bundle = await esbuild.build({
-    plugins: [...denoPlugins()],
-    entryPoints: options.entryPoints,
-    outdir: options.outdir,
-    bundle: true,
-    minify: true,
-    format: "esm",
-    write: false,
-  });
-  esbuild.stop();
-
-  return createMiddleware(async (c, next) => {
-    const url = new URL(c.req.url);
-    const output = bundle.outputFiles.find((v) => v.path == url.pathname);
-    if (!output) {
-      await next();
-      return;
-    }
-
-    c.res = c.body(output.text, 200, { "Content-Type": "application/javascript" });
-  });
-};
-
 export const app = new Hono();
 
 app.use(logger());
 
 app.use("*", serveStatic({ root: "./public" }));
-
-app.get("/js/*", await JSBundler({ entryPoints: ["./src/script.ts"], outdir: "/js/" }));
 
 app.get("/", (c) => {
   const messages = ["Good Morning", "Good Evening", "Good Night"];

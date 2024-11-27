@@ -5,7 +5,7 @@ const Layout: FC = (props) => {
     <html lang="en">
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <script src="/js/script.js" type="module"></script>
+      <script src="/dist/script.js" type="module"></script>
       <title>hello deno</title>
       <body>{props.children}</body>
     </html>
