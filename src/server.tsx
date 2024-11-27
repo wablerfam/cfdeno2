@@ -1,19 +1,24 @@
 import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
+import { STATUS_CODE } from "@std/http";
 import { ulid } from "@std/ulid";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import { serveStatic } from "hono/deno";
 import { HTTPException } from "hono/http-exception";
-import { logger } from "hono/logger";
 
 import { Top } from "./App.tsx";
 import { authData } from "./data.ts";
 import { env } from "./env.ts";
+import { LogTimer } from "./log.ts";
 import { AuthModel } from "./schema.ts";
 
 export const app = new Hono();
 
-app.use(logger());
+app.use("*", async (c, next) => {
+  const timer = new LogTimer(c.req.method, c.req.path);
+  await next();
+  timer.stop(c.res.status);
+});
 
 app.use("*", serveStatic({ root: "./public" }));
 
@@ -45,7 +50,7 @@ const auth = new Hono().basePath("/auth")
 
     const challenge = await authData.findChallenge(userName);
     if (!challenge.value) {
-      throw new HTTPException(404, { message: "No challenge exists" });
+      throw new HTTPException(STATUS_CODE.NotFound, { message: "No challenge exists" });
     }
 
     const verification = await verifyRegistrationResponse({
@@ -56,7 +61,7 @@ const auth = new Hono().basePath("/auth")
     });
 
     if (!verification.verified) {
-      throw new HTTPException(401, { message: "Not verified" });
+      throw new HTTPException(STATUS_CODE.Unauthorized, { message: "Not verified" });
     }
 
     const { credential } = verification.registrationInfo!;
@@ -97,12 +102,12 @@ const auth = new Hono().basePath("/auth")
       ({ credentialId }) => credentialId === body.id,
     );
     if (!passkey) {
-      throw new HTTPException(404, { message: "No passkey exists" });
+      throw new HTTPException(STATUS_CODE.NotFound, { message: "No passkey exists" });
     }
 
     const challenge = await authData.findChallenge(userName);
     if (!challenge.value) {
-      throw new HTTPException(404, { message: "No challenge exists" });
+      throw new HTTPException(STATUS_CODE.NotFound, { message: "No challenge exists" });
     }
 
     const verification = await verifyAuthenticationResponse({
@@ -152,17 +157,17 @@ export type AuthAppType = typeof auth;
 app.get("/restricted", async (c) => {
   const sessionId = getCookie(c, "session_id");
   if (!sessionId) {
-    return c.text("Unauthorized", 401);
+    return c.text("Unauthorized", STATUS_CODE.Unauthorized);
   }
 
   const session = await authData.getSession(sessionId);
   if (!session.value) {
-    return c.text("Unauthorized. No session exists", 401);
+    return c.text("Unauthorized. No session exists", STATUS_CODE.Unauthorized);
   }
 
   const userName = session.value.userName;
   if (!userName) {
-    return c.text("Unauthorized", 401);
+    return c.text("Unauthorized", STATUS_CODE.Unauthorized);
   }
   return c.text(`Welcome, ${userName}!`);
 });

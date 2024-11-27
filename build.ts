@@ -1,6 +1,8 @@
 import { denoPlugins } from "@luca/esbuild-deno-loader";
 import * as esbuild from "esbuild";
 
+import { logger } from "./src/log.ts";
+
 const isWatchMode = Deno.args.includes("watch");
 
 const options: esbuild.BuildOptions = {
@@ -16,9 +18,9 @@ const options: esbuild.BuildOptions = {
 if (isWatchMode) {
   const ctx = await esbuild.context(options);
   await ctx.watch();
-  console.log("Watching for file changes...");
+  logger.info("Watching for file changes...");
 } else {
   await esbuild.build(options);
   await esbuild.stop();
-  console.log("Build completed!");
+  logger.info("Build completed!");
 }
