@@ -11,7 +11,9 @@
     "db:init": "deno run -A ./db/db.ts init",
     "db:read": "deno run -A ./db/db.ts read",
     "tailwind:watch": "deno run -A npm:tailwindcss -i ./src/input.css -o ./public/styles.css --minify --watch",
-    "dev": "deno task tailwind:watch & deno serve -A --watch ./src/server.tsx"
+    "build": "deno run -A build.ts",
+    "dev": "deno task build watch & deno serve -A --watch ./src/server.tsx",
+    "deploy": "deno task build && deployctl deploy --prod"
   },
   "imports": {
     "@kt3k/cell": "jsr:@kt3k/cell@^0.7.6",
@@ -29,6 +31,6 @@
     "project": "7cc9038a-008c-4b55-9da4-a85933b4f163",
     "exclude": ["./db/"],
     "include": [],
-    "entrypoint": "src/main.ts"
+    "entrypoint": "./src/main.ts"
   }
 }
