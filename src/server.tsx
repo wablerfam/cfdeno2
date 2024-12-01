@@ -1,4 +1,5 @@
 import { Do } from "@qnighy/metaflow/do";
+import { Try } from "@qnighy/metaflow/exception";
 import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
 import { STATUS_CODE } from "@std/http";
 import { ulid } from "@std/ulid";
@@ -8,10 +9,10 @@ import { serveStatic } from "hono/deno";
 import { HTTPException } from "hono/http-exception";
 
 import { Top } from "./App.tsx";
-import { addAuthChallenge, addAuthPasskey, addSession, setAuthChallenge, setAuthPasskeys, setSession } from "./data.ts";
+import { addAuthChallenge, addAuthPasskey, addSession, AuthUserName, setAuthChallenge, setAuthPasskeys, setSession } from "./data.ts";
 import { env } from "./env.ts";
 import { LogTimer } from "./log.ts";
-import { Auth, Session } from "./schema.ts";
+import { Session } from "./schema.ts";
 
 export const app = new Hono();
 
@@ -29,18 +30,11 @@ app.get("/", (c) => {
 });
 
 export const auth = new Hono().basePath("/auth")
-  .get("/attestation/option", (c) => {
+  .get("/attestation/option", async (c) => {
     const { userName } = c.req.query();
 
-    const auth: Auth = {
-      userName: userName,
-      passkeys: null,
-      challenge: null,
-      authentication: null,
-      authorization: null,
-    };
-
-    const wf = Do(auth)
+    const wf = Do(userName)
+      .pipe(AuthUserName)
       .pipeAwait(setAuthPasskeys)
       .pipeAwait(async (auth) => {
         const options = await generateRegistrationOptions({
@@ -59,27 +53,18 @@ export const auth = new Hono().basePath("/auth")
       })
       .pipeAwait(addAuthChallenge);
 
-    return wf.done()
-      .then((auth) => {
-        return c.json({ status: "success", options: auth.authentication });
-      })
-      .catch((err) => {
-        console.log(err);
-        throw new HTTPException(500, { message: "server error" });
-      });
+    const result = Try(async () => await wf.done()).result;
+    if (result.type === "Err") {
+      throw new HTTPException(500, { message: "server error" });
+    }
+    const value = await result.value;
+    return c.json({ status: "success", options: value.authentication });
   })
   .post("/attestation/result", async (c) => {
     const { userName, body } = await c.req.json();
 
-    const auth: Auth = {
-      userName: userName,
-      passkeys: null,
-      challenge: null,
-      authentication: null,
-      authorization: null,
-    };
-
-    const wf = Do(auth)
+    const wf = Do(userName)
+      .pipe(AuthUserName)
       .pipeAwait(setAuthChallenge)
       .pipeAwait(async (auth) => {
         const verification = await verifyRegistrationResponse({
@@ -106,27 +91,18 @@ export const auth = new Hono().basePath("/auth")
       })
       .pipeAwait(addAuthPasskey);
 
-    return wf.done()
-      .then((_auth) => {
-        return c.json({ verified: true });
-      })
-      .catch((err) => {
-        console.log(err);
-        throw new HTTPException(500, { message: "server error" });
-      });
+    const result = Try(async () => await wf.done()).result;
+    if (result.type === "Err") {
+      throw new HTTPException(500, { message: "server error" });
+    }
+    // const value = await result.value;
+    return c.json({ verified: true });
   })
-  .get("/assertion/option", (c) => {
+  .get("/assertion/option", async (c) => {
     const { userName } = c.req.query();
 
-    const auth: Auth = {
-      userName: userName,
-      passkeys: null,
-      challenge: null,
-      authentication: null,
-      authorization: null,
-    };
-
-    const wf = Do(auth)
+    const wf = Do(userName)
+      .pipe(AuthUserName)
       .pipeAwait(setAuthPasskeys)
       .pipeAwait(async (auth) => {
         const options = await generateAuthenticationOptions({
@@ -144,27 +120,18 @@ export const auth = new Hono().basePath("/auth")
       })
       .pipeAwait(addAuthChallenge);
 
-    return wf.done()
-      .then((auth) => {
-        return c.json({ status: "success", options: auth.authorization });
-      })
-      .catch((err) => {
-        console.log(err);
-        throw new HTTPException(500, { message: "server error" });
-      });
+    const result = Try(async () => await wf.done()).result;
+    if (result.type === "Err") {
+      throw new HTTPException(500, { message: "server error" });
+    }
+    const value = await result.value;
+    return c.json({ status: "success", options: value.authorization });
   })
   .post("/assertion/result", async (c) => {
     const { userName, body } = await c.req.json();
 
-    const auth: Auth = {
-      userName: userName,
-      passkeys: null,
-      challenge: null,
-      authentication: null,
-      authorization: null,
-    };
-
-    const wf = Do(auth)
+    const wf = Do(userName)
+      .pipe(AuthUserName)
       .pipeAwait(setAuthChallenge)
       .pipeAwait(setAuthPasskeys)
       .pipeAwait(async (auth) => {
@@ -222,14 +189,12 @@ export const auth = new Hono().basePath("/auth")
       })
       .pipeAwait(addSession);
 
-    return wf.done()
-      .then((_auth) => {
-        return c.json({ verified: true });
-      })
-      .catch((err) => {
-        console.log(err);
-        throw new HTTPException(500, { message: "server error" });
-      });
+    const result = Try(async () => await wf.done()).result;
+    if (result.type === "Err") {
+      throw new HTTPException(500, { message: "server error" });
+    }
+    // const value = await result.value;
+    return c.json({ verified: true });
   });
 
 export type AuthAppType = typeof auth;

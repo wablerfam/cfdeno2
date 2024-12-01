@@ -37,6 +37,16 @@ export const addRoomLog = async (room: Room): Promise<Room> => {
   return room;
 };
 
+export const AuthUserName = (userName: string): Auth => {
+  return {
+    userName: userName,
+    passkeys: null,
+    challenge: null,
+    authentication: null,
+    authorization: null,
+  };
+};
+
 export const setAuthPasskeys = async (auth: Auth): Promise<Auth> => {
   const entries = kv.list<Passkey>({ prefix: ["passkey", auth.userName!] });
   const passkeys: Auth["passkeys"] = [];
