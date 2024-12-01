@@ -1,5 +1,5 @@
 import { env } from "./env.ts";
-import { Auth, Passkey, Room } from "./schema.ts";
+import { Auth, Passkey, Room, Session } from "./schema.ts";
 
 export const kv = await Deno.openKv(env.DATABASE_URL ?? undefined);
 
@@ -55,26 +55,22 @@ export const setAuthChallenge = async (auth: Auth): Promise<Auth> => {
   };
 };
 
-export const setAuthSession = async (auth: Auth): Promise<Auth> => {
-  const entry = await kv.get<Auth["session"]>(["session", auth.session!.id]);
-  return {
-    ...auth,
-    session: entry.value,
-  };
-};
-
 export const addAuthPasskey = async (auth: Auth): Promise<Auth> => {
   await kv.set(["passkey", auth.userName!, auth.passkeys![0].id], auth.passkeys![0]);
   return auth;
 };
 
 export const addAuthChallenge = async (auth: Auth): Promise<Auth> => {
-  console.log(auth);
   await kv.set(["challenge", auth.userName!], auth.challenge);
   return auth;
 };
 
-export const addAuthSession = async (auth: Auth) => {
-  await kv.set(["session", auth.session!.id], auth.session);
-  return auth;
+export const setSession = async (session: Session): Promise<Session> => {
+  const entry = await kv.get<Session>(["session", session.id]);
+  return entry.value!;
+};
+
+export const addSession = async (session: Session): Promise<Session> => {
+  await kv.set(["session", session.id], session);
+  return session;
 };

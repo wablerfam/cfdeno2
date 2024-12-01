@@ -35,20 +35,19 @@ export const PasskeySchema = v.object({
 export type Passkey = v.InferOutput<typeof PasskeySchema>;
 
 export const AuthSchema = v.object({
-  // userName: v.union([v.string(), v.null()]),
   userName: v.string(),
   passkeys: v.union([v.array(PasskeySchema), v.null()]),
   challenge: v.union([v.string(), v.null()]),
   authentication: v.union([v.unknown(), v.null()]),
   authorization: v.union([v.unknown(), v.null()]),
-  session: v.union([
-    v.object({
-      id: v.string(),
-      userName: v.union([v.string(), v.null()]),
-      expirationTtl: v.union([v.number(), v.null()]),
-    }),
-    v.null(),
-  ]),
 });
 
 export type Auth = v.InferOutput<typeof AuthSchema>;
+
+export const SessionSchema = v.object({
+  id: v.string(),
+  userName: v.union([v.string(), v.null()]),
+  expirationTtl: v.union([v.number(), v.null()]),
+});
+
+export type Session = v.InferOutput<typeof SessionSchema>;

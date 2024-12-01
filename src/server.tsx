@@ -8,10 +8,10 @@ import { serveStatic } from "hono/deno";
 import { HTTPException } from "hono/http-exception";
 
 import { Top } from "./App.tsx";
-import { addAuthChallenge, addAuthPasskey, addAuthSession, setAuthChallenge, setAuthPasskeys, setAuthSession } from "./data.ts";
+import { addAuthChallenge, addAuthPasskey, addSession, setAuthChallenge, setAuthPasskeys, setSession } from "./data.ts";
 import { env } from "./env.ts";
 import { LogTimer } from "./log.ts";
-import { Auth } from "./schema.ts";
+import { Auth, Session } from "./schema.ts";
 
 export const app = new Hono();
 
@@ -38,7 +38,6 @@ export const auth = new Hono().basePath("/auth")
       challenge: null,
       authentication: null,
       authorization: null,
-      session: null,
     };
 
     const wf = Do(auth)
@@ -78,7 +77,6 @@ export const auth = new Hono().basePath("/auth")
       challenge: null,
       authentication: null,
       authorization: null,
-      session: null,
     };
 
     const wf = Do(auth)
@@ -126,7 +124,6 @@ export const auth = new Hono().basePath("/auth")
       challenge: null,
       authentication: null,
       authorization: null,
-      session: null,
     };
 
     const wf = Do(auth)
@@ -165,7 +162,6 @@ export const auth = new Hono().basePath("/auth")
       challenge: null,
       authentication: null,
       authorization: null,
-      session: null,
     };
 
     const wf = Do(auth)
@@ -216,16 +212,15 @@ export const auth = new Hono().basePath("/auth")
           path: "/",
         });
 
-        return {
-          ...auth,
-          session: {
-            id: sessionId,
-            userName: auth.userName,
-            expirationTtl: ttl,
-          },
+        const session: Session = {
+          id: sessionId,
+          userName: auth.userName,
+          expirationTtl: ttl,
         };
+
+        return session;
       })
-      .pipeAwait(addAuthSession);
+      .pipeAwait(addSession);
 
     return wf.done()
       .then((_auth) => {
@@ -242,25 +237,18 @@ export type AuthAppType = typeof auth;
 app.get("/restricted", (c) => {
   const sessionId = getCookie(c, "session_id");
 
-  const auth: Auth = {
-    userName: "",
-    passkeys: null,
-    challenge: null,
-    authentication: null,
-    authorization: null,
-    session: {
-      id: sessionId!,
-      userName: null,
-      expirationTtl: null,
-    },
+  const session: Session = {
+    id: sessionId!,
+    userName: null,
+    expirationTtl: null,
   };
 
-  const wf = Do(auth)
-    .pipeAwait(setAuthSession);
+  const wf = Do(session)
+    .pipeAwait(setSession);
 
   return wf.done()
-    .then((auth) => {
-      return c.text(`Welcome, ${auth.session?.userName}!`);
+    .then((session) => {
+      return c.text(`Welcome, ${session.userName}!`);
     })
     .catch((err) => {
       console.log(err);
