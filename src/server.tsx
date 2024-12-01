@@ -1,3 +1,4 @@
+import { Do } from "@qnighy/metaflow/do";
 import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
 import { STATUS_CODE } from "@std/http";
 import { ulid } from "@std/ulid";
@@ -7,10 +8,10 @@ import { serveStatic } from "hono/deno";
 import { HTTPException } from "hono/http-exception";
 
 import { Top } from "./App.tsx";
-import { authData } from "./data.ts";
+import { addAuthChallenge, addAuthPasskey, addAuthSession, setAuthChallenge, setAuthPasskeys, setAuthSession } from "./data.ts";
 import { env } from "./env.ts";
 import { LogTimer } from "./log.ts";
-import { AuthModel } from "./schema.ts";
+import { Auth } from "./schema.ts";
 
 export const app = new Hono();
 
@@ -27,149 +28,244 @@ app.get("/", (c) => {
   return c.html(<Top messages={messages} />);
 });
 
-const auth = new Hono().basePath("/auth")
-  .get("/attestation/option", async (c) => {
+export const auth = new Hono().basePath("/auth")
+  .get("/attestation/option", (c) => {
     const { userName } = c.req.query();
 
-    const passkeys = await authData.findPasskeys(userName);
-
-    const options = await generateRegistrationOptions({
-      rpName: "My WebAuthn App",
-      rpID: env.API_DOMAIN,
+    const auth: Auth = {
       userName: userName,
-      excludeCredentials: passkeys.value.map((passkey) => ({ id: passkey.credentialId })),
-      authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
-    });
+      passkeys: null,
+      challenge: null,
+      authentication: null,
+      authorization: null,
+      session: null,
+    };
 
-    await authData.addChallenge(userName, options.challenge);
+    const wf = Do(auth)
+      .pipeAwait(setAuthPasskeys)
+      .pipeAwait(async (auth) => {
+        const options = await generateRegistrationOptions({
+          rpName: "My WebAuthn App",
+          rpID: env.API_DOMAIN,
+          userName: userName,
+          excludeCredentials: auth.passkeys!.map((passkey) => ({ id: passkey.credentialId })),
+          authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
+        });
 
-    return c.json({ status: "success", options });
+        return {
+          ...auth,
+          challenge: options.challenge,
+          authentication: options,
+        };
+      })
+      .pipeAwait(addAuthChallenge);
+
+    return wf.done()
+      .then((auth) => {
+        return c.json({ status: "success", options: auth.authentication });
+      })
+      .catch((err) => {
+        console.log(err);
+        throw new HTTPException(500, { message: "server error" });
+      });
   })
   .post("/attestation/result", async (c) => {
     const { userName, body } = await c.req.json();
 
-    const challenge = await authData.findChallenge(userName);
-    if (!challenge.value) {
-      throw new HTTPException(STATUS_CODE.NotFound, { message: "No challenge exists" });
-    }
-
-    const verification = await verifyRegistrationResponse({
-      response: body,
-      expectedChallenge: challenge.value,
-      expectedOrigin: env.API_ORIGIN,
-      expectedRPID: env.API_DOMAIN,
-    });
-
-    if (!verification.verified) {
-      throw new HTTPException(STATUS_CODE.Unauthorized, { message: "Not verified" });
-    }
-
-    const { credential } = verification.registrationInfo!;
-
-    const passkey: AuthModel["Passkey"] = {
-      id: credential.id,
-      credentialId: credential.id,
-      publicKey: credential.publicKey,
+    const auth: Auth = {
       userName: userName,
-      counter: credential.counter,
+      passkeys: null,
+      challenge: null,
+      authentication: null,
+      authorization: null,
+      session: null,
     };
 
-    await authData.addPasskey(passkey);
+    const wf = Do(auth)
+      .pipeAwait(setAuthChallenge)
+      .pipeAwait(async (auth) => {
+        const verification = await verifyRegistrationResponse({
+          response: body,
+          expectedChallenge: auth.challenge!,
+          expectedOrigin: env.API_ORIGIN,
+          expectedRPID: env.API_DOMAIN,
+        });
 
-    return c.json({ verified: true });
+        const { credential } = verification.registrationInfo!;
+
+        return {
+          ...auth,
+          passkeys: [
+            {
+              id: credential.id,
+              credentialId: credential.id,
+              publicKey: credential.publicKey,
+              userName: auth.userName,
+              counter: credential.counter,
+            },
+          ],
+        };
+      })
+      .pipeAwait(addAuthPasskey);
+
+    return wf.done()
+      .then((_auth) => {
+        return c.json({ verified: true });
+      })
+      .catch((err) => {
+        console.log(err);
+        throw new HTTPException(500, { message: "server error" });
+      });
   })
-  .get("/assertion/option", async (c) => {
+  .get("/assertion/option", (c) => {
     const { userName } = c.req.query();
 
-    const passkeys = await authData.findPasskeys(userName);
+    const auth: Auth = {
+      userName: userName,
+      passkeys: null,
+      challenge: null,
+      authentication: null,
+      authorization: null,
+      session: null,
+    };
 
-    const options = await generateAuthenticationOptions({
-      rpID: env.API_DOMAIN,
-      allowCredentials: passkeys.value.map((passkey) => ({
-        id: passkey.credentialId,
-      })),
-    });
+    const wf = Do(auth)
+      .pipeAwait(setAuthPasskeys)
+      .pipeAwait(async (auth) => {
+        const options = await generateAuthenticationOptions({
+          rpID: env.API_DOMAIN,
+          allowCredentials: auth.passkeys!.map((passkey) => ({
+            id: passkey.credentialId,
+          })),
+        });
 
-    await authData.addChallenge(userName, options.challenge);
+        return {
+          ...auth,
+          challenge: options.challenge,
+          authorization: options,
+        };
+      })
+      .pipeAwait(addAuthChallenge);
 
-    return c.json({ status: "success", options });
+    return wf.done()
+      .then((auth) => {
+        return c.json({ status: "success", options: auth.authorization });
+      })
+      .catch((err) => {
+        console.log(err);
+        throw new HTTPException(500, { message: "server error" });
+      });
   })
   .post("/assertion/result", async (c) => {
     const { userName, body } = await c.req.json();
 
-    const passkeys = await authData.findPasskeys(userName);
-    const passkey = passkeys.value.find(
-      ({ credentialId }) => credentialId === body.id,
-    );
-    if (!passkey) {
-      throw new HTTPException(STATUS_CODE.NotFound, { message: "No passkey exists" });
-    }
+    const auth: Auth = {
+      userName: userName,
+      passkeys: null,
+      challenge: null,
+      authentication: null,
+      authorization: null,
+      session: null,
+    };
 
-    const challenge = await authData.findChallenge(userName);
-    if (!challenge.value) {
-      throw new HTTPException(STATUS_CODE.NotFound, { message: "No challenge exists" });
-    }
+    const wf = Do(auth)
+      .pipeAwait(setAuthChallenge)
+      .pipeAwait(setAuthPasskeys)
+      .pipeAwait(async (auth) => {
+        const passkey = auth.passkeys!.find(
+          ({ credentialId }) => credentialId === body.id,
+        );
+        if (!passkey) {
+          throw new Error("No passkey exists");
+        }
 
-    const verification = await verifyAuthenticationResponse({
-      response: body,
-      expectedChallenge: challenge.value,
-      expectedOrigin: env.API_ORIGIN,
-      expectedRPID: env.API_DOMAIN,
-      credential: {
-        id: passkey.credentialId,
-        publicKey: passkey.publicKey,
-        counter: passkey.counter,
-      },
-    });
+        const verification = await verifyAuthenticationResponse({
+          response: body,
+          expectedChallenge: auth.challenge!,
+          expectedOrigin: env.API_ORIGIN,
+          expectedRPID: env.API_DOMAIN,
+          credential: {
+            id: passkey.credentialId,
+            publicKey: passkey.publicKey,
+            counter: passkey.counter,
+          },
+        });
 
-    const verified = verification.verified;
+        const verified = verification.verified;
+        if (!verified) {
+          throw new Error("No verified exists");
+        }
 
-    if (verified) {
-      const newPasskey = structuredClone(passkey);
-      passkey.counter = verification.authenticationInfo.newCounter;
-      await authData.updatePasskey(newPasskey);
-    }
+        const newPasskey = structuredClone(passkey);
+        passkey.counter = verification.authenticationInfo.newCounter;
 
-    if (verified) {
-      const ttl = 60 * 60 * 24;
-      const sessionId = ulid();
-      setCookie(c, "session_id", sessionId, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "None",
-        maxAge: ttl,
-        path: "/",
+        return {
+          ...auth,
+          passkeys: [newPasskey],
+        };
+      })
+      .pipeAwait(addAuthPasskey)
+      .pipe((auth) => {
+        const ttl = 60 * 60 * 24;
+        const sessionId = ulid();
+        setCookie(c, "session_id", sessionId, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "None",
+          maxAge: ttl,
+          path: "/",
+        });
+
+        return {
+          ...auth,
+          session: {
+            id: sessionId,
+            userName: auth.userName,
+            expirationTtl: ttl,
+          },
+        };
+      })
+      .pipeAwait(addAuthSession);
+
+    return wf.done()
+      .then((_auth) => {
+        return c.json({ verified: true });
+      })
+      .catch((err) => {
+        console.log(err);
+        throw new HTTPException(500, { message: "server error" });
       });
-
-      const session: AuthModel["Session"] = {
-        id: sessionId,
-        userName: userName,
-        expirationTtl: ttl,
-      };
-      await authData.setSession(session);
-    }
-
-    return c.json({ verified: verified });
   });
 
 export type AuthAppType = typeof auth;
 
-app.get("/restricted", async (c) => {
+app.get("/restricted", (c) => {
   const sessionId = getCookie(c, "session_id");
-  if (!sessionId) {
-    return c.text("Unauthorized", STATUS_CODE.Unauthorized);
-  }
 
-  const session = await authData.getSession(sessionId);
-  if (!session.value) {
-    return c.text("Unauthorized. No session exists", STATUS_CODE.Unauthorized);
-  }
+  const auth: Auth = {
+    userName: "",
+    passkeys: null,
+    challenge: null,
+    authentication: null,
+    authorization: null,
+    session: {
+      id: sessionId!,
+      userName: null,
+      expirationTtl: null,
+    },
+  };
 
-  const userName = session.value.userName;
-  if (!userName) {
-    return c.text("Unauthorized", STATUS_CODE.Unauthorized);
-  }
-  return c.text(`Welcome, ${userName}!`);
+  const wf = Do(auth)
+    .pipeAwait(setAuthSession);
+
+  return wf.done()
+    .then((auth) => {
+      return c.text(`Welcome, ${auth.session?.userName}!`);
+    })
+    .catch((err) => {
+      console.log(err);
+      return c.text("Unauthorized", STATUS_CODE.Unauthorized);
+    });
 });
 
 app.route("/", auth);

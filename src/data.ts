@@ -1,123 +1,80 @@
-import { ulid } from "@std/ulid";
-import * as v from "@valibot/valibot";
-import { err, ok } from "neverthrow";
-
 import { env } from "./env.ts";
-import { AuthModel, MemberModel, MemberSchema } from "./schema.ts";
+import { Auth, Passkey, Room } from "./schema.ts";
 
 export const kv = await Deno.openKv(env.DATABASE_URL ?? undefined);
 
-const findUserByEmail = async (email: MemberModel["User"]["email"]) => {
-  const user: MemberModel["User"] = {
-    id: ulid(),
-    email: email,
-    houseId: ulid(),
-  };
-
-  await kv.set(["user", email], user);
-  const entries = kv.list({ prefix: ["user"] });
-  for await (const entry of entries) {
-    console.log(entry.key, entry.value);
-  }
-};
-
-const findAllRooms = async () => {
-  const iter = kv.list<MemberModel["Room"]>({ prefix: ["room"] });
+export const findRoomsBySensorState = async (sensorState: Room["sensor"]["state"]): Promise<Room[]> => {
+  const iter = kv.list<Room>({ prefix: ["room", sensorState] });
   const rooms = [];
   for await (const res of iter) rooms.push(res.value);
-  return ok(rooms);
+  return rooms;
 };
 
-const addRoomLog = async (roomLog: MemberModel["RoomLog"]) => {
-  await kv.set(["room_log", roomLog.createdAt], roomLog);
-  return ok(null);
-};
-
-const getRoomCondition = async (sensorId: MemberModel["Room"]["sensorId"]) => {
+export const setRoomStatusCurrent = async (room: Room): Promise<Room> => {
   const res = await fetch("https://api.nature.global/1/devices", {
-    headers: { Authorization: `Bearer ${sensorId}` },
+    headers: { Authorization: `Bearer ${room.sensor.id}` },
   });
   if (!res.ok) {
-    return err(new Error(res.statusText));
+    throw new Error(res.statusText);
   }
 
   const json = await res.json();
 
-  //   const roomCondition: Model["RoomCondition"] = {
-  //     temperature: json[0]?.newest_events?.te?.val,
-  //     humidity: json[0]?.newest_events?.hu?.val,
-  //   };
-  const roomCondition = v.safeParse(MemberSchema["RoomCondition"], {
-    temperature: json[0]?.temperature_offset,
-    humidity: json[0]?.humidity_offset,
-  });
-  if (!roomCondition.success) {
-    return err(new Error("validation failed"));
-  }
-
-  return ok(roomCondition);
+  return {
+    ...room,
+    status: {
+      current: {
+        temperature: json[0]?.temperature_offset,
+        humidity: json[0]?.humidity_offset,
+        timestamp: new Date().toISOString(),
+      },
+    },
+  };
 };
 
-export const memberData = {
-  findUserByEmail: findUserByEmail,
-  findAllRooms: findAllRooms,
-  addRoomLog: addRoomLog,
-  getRoomCondition: getRoomCondition,
+export const addRoomLog = async (room: Room): Promise<Room> => {
+  await kv.set(["room_log", room.id, room.status!.current.timestamp], room.status!.current);
+  return room;
 };
 
-const findPasskeys = async (userName: string) => {
-  const entries = kv.list<AuthModel["Passkey"]>({ prefix: ["passkey", userName] });
-  const passkeys: AuthModel["Passkey"][] = [];
-  for await (const entry of entries) {
-    passkeys.push(entry.value);
-  }
-  return ok(passkeys);
+export const setAuthPasskeys = async (auth: Auth): Promise<Auth> => {
+  const entries = kv.list<Passkey>({ prefix: ["passkey", auth.userName!] });
+  const passkeys: Auth["passkeys"] = [];
+  for await (const entry of entries) passkeys.push(entry.value);
+  return {
+    ...auth,
+    passkeys: passkeys,
+  };
 };
 
-const addPasskey = async (passkey: AuthModel["Passkey"]) => {
-  await kv.set(["passkey", passkey.userName, passkey.id], passkey);
-  return ok(null);
+export const setAuthChallenge = async (auth: Auth): Promise<Auth> => {
+  const entry = await kv.get<Auth["challenge"]>(["challenge", auth.userName!]);
+  return {
+    ...auth,
+    challenge: entry.value,
+  };
 };
 
-const updatePasskey = async (passkey: AuthModel["Passkey"]) => {
-  const key = ["passkey", passkey.userName, passkey.id];
-
-  // const existingEntry = await kv.get<AuthModel["Passkey"]>(key);
-
-  // if (existingEntry.value) {
-  //   throw new Error(`Passkey with ID ${passkey.id} already exists for user ${passkey.userName}.`);
-  // }
-
-  await kv.set(key, passkey);
-  return ok(null);
+export const setAuthSession = async (auth: Auth): Promise<Auth> => {
+  const entry = await kv.get<Auth["session"]>(["session", auth.session!.id]);
+  return {
+    ...auth,
+    session: entry.value,
+  };
 };
 
-const findChallenge = async (userName: string) => {
-  const entry = await kv.get<AuthModel["Challenge"]>(["challenge", userName]);
-  return ok(entry.value);
+export const addAuthPasskey = async (auth: Auth): Promise<Auth> => {
+  await kv.set(["passkey", auth.userName!, auth.passkeys![0].id], auth.passkeys![0]);
+  return auth;
 };
 
-const addChallenge = async (userName: string, challenge: AuthModel["Challenge"]) => {
-  await kv.set(["challenge", userName], challenge);
-  return ok(null);
+export const addAuthChallenge = async (auth: Auth): Promise<Auth> => {
+  console.log(auth);
+  await kv.set(["challenge", auth.userName!], auth.challenge);
+  return auth;
 };
 
-const getSession = async (sessionId: string) => {
-  const entry = await kv.get<AuthModel["Session"]>(["session", sessionId]);
-  return ok(entry.value);
-};
-
-const setSession = async (session: AuthModel["Session"]) => {
-  await kv.set(["session", session.id], session);
-  return ok(null);
-};
-
-export const authData = {
-  findPasskeys: findPasskeys,
-  addPasskey: addPasskey,
-  updatePasskey: updatePasskey,
-  findChallenge: findChallenge,
-  addChallenge: addChallenge,
-  getSession: getSession,
-  setSession: setSession,
+export const addAuthSession = async (auth: Auth) => {
+  await kv.set(["session", auth.session!.id], auth.session);
+  return auth;
 };

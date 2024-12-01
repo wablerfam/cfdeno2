@@ -19,14 +19,14 @@ const Auth = ({ on, query }: Context) => {
       { query: { userName: userName } },
     );
     if (!optionsResponse.ok) {
-      alert(`認証に失敗しました: ${await optionsResponse.text()}`);
+      alert(`認証に失敗しました1: ${await optionsResponse.text()}`);
     }
     const { options } = await optionsResponse.json();
 
     const startRegistrationAsync = ResultAsync.fromThrowable(SimpleWebAuthnBrowser.startRegistration);
     const registration = await startRegistrationAsync({ optionsJSON: options });
     if (!registration.isOk()) {
-      alert(`認証に失敗しました: ${registration.error}`);
+      alert(`認証に失敗しました2: ${registration.error}`);
       return;
     }
 
@@ -39,7 +39,7 @@ const Auth = ({ on, query }: Context) => {
       },
     );
     if (!verificationResponse.ok) {
-      alert(`認証に失敗しました: ${await verificationResponse.text()}`);
+      alert(`認証に失敗しました3: ${await verificationResponse.text()}`);
     }
 
     const verification = await verificationResponse.json();

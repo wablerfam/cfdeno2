@@ -2,52 +2,29 @@ import * as v from "@valibot/valibot";
 
 const IdSchema = v.pipe(v.string(), v.ulid());
 
-const UserSchema = v.object({
-  id: IdSchema,
-  email: v.pipe(v.string(), v.email()),
-  houseId: v.string(),
-});
-
-const HouseSchema = v.object({
+export const RoomSchema = v.object({
   id: IdSchema,
   name: v.string(),
-});
-
-const RoomSchema = v.object({
-  id: IdSchema,
-  name: v.string(),
-  sensorId: v.string(),
+  sensor: v.object({
+    state: v.union([v.literal("active_sensor"), v.literal("inactive_sensor")]),
+    id: v.union([v.string(), v.null()]),
+  }),
+  status: v.union([
+    v.object({
+      current: v.object({
+        temperature: v.number(),
+        humidity: v.number(),
+        timestamp: v.pipe(v.string(), v.isoTimestamp()),
+      }),
+    }),
+    v.null(),
+  ]),
   houseId: IdSchema,
 });
 
-const RoomConditionSchema = v.object({
-  temperature: v.number(),
-  humidity: v.number(),
-});
+export type Room = v.InferOutput<typeof RoomSchema>;
 
-const RoomLog = v.object({
-  condition: RoomConditionSchema,
-  roomId: IdSchema,
-  createdAt: v.pipe(v.string(), v.isoTimestamp()),
-});
-
-export const MemberSchema = {
-  User: UserSchema,
-  House: HouseSchema,
-  Room: RoomSchema,
-  RoomCondition: RoomConditionSchema,
-  RoomLog: RoomLog,
-};
-
-export type MemberModel = {
-  User: v.InferOutput<typeof MemberSchema.User>;
-  House: v.InferOutput<typeof MemberSchema.House>;
-  Room: v.InferOutput<typeof MemberSchema.Room>;
-  RoomCondition: v.InferOutput<typeof MemberSchema.RoomCondition>;
-  RoomLog: v.InferOutput<typeof MemberSchema.RoomLog>;
-};
-
-const PasskeySchema = v.object({
+export const PasskeySchema = v.object({
   id: v.string(),
   credentialId: v.string(),
   publicKey: v.union([v.instance(Uint8Array)]),
@@ -55,22 +32,23 @@ const PasskeySchema = v.object({
   counter: v.number(),
 });
 
-const ChallengeSchema = v.string();
+export type Passkey = v.InferOutput<typeof PasskeySchema>;
 
-const SessionSchema = v.object({
-  id: v.string(),
+export const AuthSchema = v.object({
+  // userName: v.union([v.string(), v.null()]),
   userName: v.string(),
-  expirationTtl: v.number(),
+  passkeys: v.union([v.array(PasskeySchema), v.null()]),
+  challenge: v.union([v.string(), v.null()]),
+  authentication: v.union([v.unknown(), v.null()]),
+  authorization: v.union([v.unknown(), v.null()]),
+  session: v.union([
+    v.object({
+      id: v.string(),
+      userName: v.union([v.string(), v.null()]),
+      expirationTtl: v.union([v.number(), v.null()]),
+    }),
+    v.null(),
+  ]),
 });
 
-export const AuthSchema = {
-  Passkey: PasskeySchema,
-  Challenge: ChallengeSchema,
-  Session: SessionSchema,
-};
-
-export type AuthModel = {
-  Passkey: v.InferOutput<typeof AuthSchema.Passkey>;
-  Challenge: v.InferOutput<typeof AuthSchema.Challenge>;
-  Session: v.InferOutput<typeof AuthSchema.Session>;
-};
+export type Auth = v.InferOutput<typeof AuthSchema>;
