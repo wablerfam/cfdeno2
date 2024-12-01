@@ -1,6 +1,5 @@
 import { Do } from "@qnighy/metaflow/do";
 import { Try } from "@qnighy/metaflow/exception";
-import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
 import { STATUS_CODE } from "@std/http";
 import { ulid } from "@std/ulid";
 import { Hono } from "hono";
@@ -15,9 +14,13 @@ import {
   addSession,
   AuthUserName,
   AuthUserNameWithAuthenticationResponse,
-  AuthUserNameWithAuthorizationResponse,
+  AuthUserNameWitRregistrationResponse,
+  setAuthAuthorizationOptions,
   setAuthChallenge,
+  setAuthCredentialPasskey,
   setAuthPasskeys,
+  setAuthRegistrationOptions,
+  setAuthVerifiedPasskey,
   setSession,
 } from "./data.ts";
 import { env } from "./env.ts";
@@ -46,24 +49,7 @@ export const auth = new Hono().basePath("/auth")
     const wf = Do({ userName: userName, rp: { name: "My WebAuthn App", id: env.API_DOMAIN } })
       .pipe(AuthUserName)
       .pipeAwait(setAuthPasskeys)
-      .pipeAwait(async (auth) => {
-        const options = await generateRegistrationOptions({
-          rpName: auth.rp.name,
-          rpID: auth.rp.id,
-          userName: userName,
-          excludeCredentials: auth.passkeys!.map((passkey) => ({ id: passkey.credentialId })),
-          authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
-        });
-
-        return {
-          ...auth,
-          challenge: options.challenge,
-          authentication: {
-            options: options,
-            response: null,
-          },
-        };
-      })
+      .pipeAwait(setAuthRegistrationOptions)
       .pipeAwait(addAuthChallenge);
 
     const result = Try(async () => await wf.done()).result;
@@ -71,37 +57,15 @@ export const auth = new Hono().basePath("/auth")
       throw new HTTPException(500, { message: "server error" });
     }
     const value = await result.value;
-    return c.json({ status: "success", options: value.authentication?.options });
+    return c.json({ status: "success", options: value.registration?.options });
   })
   .post("/attestation/result", async (c) => {
     const { userName, body } = await c.req.json();
 
     const wf = Do({ userName: userName, rp: { name: "My WebAuthn App", id: env.API_DOMAIN }, response: body })
-      .pipe(AuthUserNameWithAuthenticationResponse)
+      .pipe(AuthUserNameWitRregistrationResponse)
       .pipeAwait(setAuthChallenge)
-      .pipeAwait(async (auth) => {
-        const verification = await verifyRegistrationResponse({
-          response: auth.authentication!.response!,
-          expectedChallenge: auth.challenge!,
-          expectedOrigin: env.API_ORIGIN,
-          expectedRPID: env.API_DOMAIN,
-        });
-
-        const { credential } = verification.registrationInfo!;
-
-        return {
-          ...auth,
-          passkeys: [
-            {
-              id: credential.id,
-              credentialId: credential.id,
-              publicKey: credential.publicKey,
-              userName: auth.userName,
-              counter: credential.counter,
-            },
-          ],
-        };
-      })
+      .pipeAwait(setAuthCredentialPasskey)
       .pipeAwait(addAuthPasskey);
 
     const result = Try(async () => await wf.done()).result;
@@ -117,23 +81,7 @@ export const auth = new Hono().basePath("/auth")
     const wf = Do({ userName: userName, rp: { name: "My WebAuthn App", id: env.API_DOMAIN } })
       .pipe(AuthUserName)
       .pipeAwait(setAuthPasskeys)
-      .pipeAwait(async (auth) => {
-        const options = await generateAuthenticationOptions({
-          rpID: auth.rp.id,
-          allowCredentials: auth.passkeys!.map((passkey) => ({
-            id: passkey.credentialId,
-          })),
-        });
-
-        return {
-          ...auth,
-          challenge: options.challenge,
-          authorization: {
-            options: options,
-            response: null,
-          },
-        };
-      })
+      .pipeAwait(setAuthAuthorizationOptions)
       .pipeAwait(addAuthChallenge);
 
     const result = Try(async () => await wf.done()).result;
@@ -147,42 +95,10 @@ export const auth = new Hono().basePath("/auth")
     const { userName, body } = await c.req.json();
 
     const wf = Do({ userName: userName, rp: { name: "My WebAuthn App", id: env.API_DOMAIN }, response: body })
-      .pipe(AuthUserNameWithAuthorizationResponse)
+      .pipe(AuthUserNameWithAuthenticationResponse)
       .pipeAwait(setAuthChallenge)
       .pipeAwait(setAuthPasskeys)
-      .pipeAwait(async (auth) => {
-        const passkey = auth.passkeys!.find(
-          ({ credentialId }) => credentialId === auth.authorization!.response!.id,
-        );
-        if (!passkey) {
-          throw new Error("No passkey exists");
-        }
-
-        const verification = await verifyAuthenticationResponse({
-          response: auth.authorization!.response!,
-          expectedChallenge: auth.challenge!,
-          expectedOrigin: env.API_ORIGIN,
-          expectedRPID: env.API_DOMAIN,
-          credential: {
-            id: passkey.credentialId,
-            publicKey: passkey.publicKey,
-            counter: passkey.counter,
-          },
-        });
-
-        const verified = verification.verified;
-        if (!verified) {
-          throw new Error("No verified exists");
-        }
-
-        const newPasskey = structuredClone(passkey);
-        passkey.counter = verification.authenticationInfo.newCounter;
-
-        return {
-          ...auth,
-          passkeys: [newPasskey],
-        };
-      })
+      .pipeAwait(setAuthVerifiedPasskey)
       .pipeAwait(addAuthPasskey)
       .pipe((auth) => {
         const ttl = 60 * 60 * 24;

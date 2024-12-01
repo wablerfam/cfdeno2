@@ -1,3 +1,4 @@
+import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
 import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
 
 import { env } from "./env.ts";
@@ -45,12 +46,12 @@ export const AuthUserName = (auth: { userName: Auth["userName"]; rp: Auth["rp"] 
     rp: auth.rp,
     passkeys: null,
     challenge: null,
-    authentication: null,
+    registration: null,
     authorization: null,
   };
 };
 
-export const AuthUserNameWithAuthenticationResponse = (
+export const AuthUserNameWitRregistrationResponse = (
   auth: { userName: Auth["userName"]; rp: Auth["rp"]; response: RegistrationResponseJSON },
 ): Auth => {
   return {
@@ -58,7 +59,7 @@ export const AuthUserNameWithAuthenticationResponse = (
     rp: auth.rp,
     passkeys: null,
     challenge: null,
-    authentication: {
+    registration: {
       options: null,
       response: auth.response,
     },
@@ -66,7 +67,7 @@ export const AuthUserNameWithAuthenticationResponse = (
   };
 };
 
-export const AuthUserNameWithAuthorizationResponse = (
+export const AuthUserNameWithAuthenticationResponse = (
   auth: { userName: Auth["userName"]; rp: Auth["rp"]; response: AuthenticationResponseJSON },
 ): Auth => {
   return {
@@ -74,7 +75,7 @@ export const AuthUserNameWithAuthorizationResponse = (
     rp: auth.rp,
     passkeys: null,
     challenge: null,
-    authentication: null,
+    registration: null,
     authorization: {
       options: null,
       response: auth.response,
@@ -97,6 +98,101 @@ export const setAuthChallenge = async (auth: Auth): Promise<Auth> => {
   return {
     ...auth,
     challenge: entry.value,
+  };
+};
+
+export const setAuthRegistrationOptions = async (auth: Auth): Promise<Auth> => {
+  const options = await generateRegistrationOptions({
+    rpName: auth.rp.name,
+    rpID: auth.rp.id,
+    userName: auth.userName,
+    excludeCredentials: auth.passkeys!.map((passkey) => ({ id: passkey.credentialId })),
+    authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
+  });
+
+  return {
+    ...auth,
+    challenge: options.challenge,
+    registration: {
+      options: options,
+      response: null,
+    },
+  };
+};
+
+export const setAuthCredentialPasskey = async (auth: Auth): Promise<Auth> => {
+  const verification = await verifyRegistrationResponse({
+    response: auth.registration!.response!,
+    expectedChallenge: auth.challenge!,
+    expectedOrigin: env.API_ORIGIN,
+    expectedRPID: env.API_DOMAIN,
+  });
+
+  const { credential } = verification.registrationInfo!;
+
+  return {
+    ...auth,
+    passkeys: [
+      {
+        id: credential.id,
+        credentialId: credential.id,
+        publicKey: credential.publicKey,
+        userName: auth.userName,
+        counter: credential.counter,
+      },
+    ],
+  };
+};
+
+export const setAuthAuthorizationOptions = async (auth: Auth): Promise<Auth> => {
+  const options = await generateAuthenticationOptions({
+    rpID: auth.rp.id,
+    allowCredentials: auth.passkeys!.map((passkey) => ({
+      id: passkey.credentialId,
+    })),
+  });
+
+  return {
+    ...auth,
+    challenge: options.challenge,
+    authorization: {
+      options: options,
+      response: null,
+    },
+  };
+};
+
+export const setAuthVerifiedPasskey = async (auth: Auth): Promise<Auth> => {
+  const passkey = auth.passkeys!.find(
+    ({ credentialId }) => credentialId === auth.authorization!.response!.id,
+  );
+  if (!passkey) {
+    throw new Error("No passkey exists");
+  }
+
+  const verification = await verifyAuthenticationResponse({
+    response: auth.authorization!.response!,
+    expectedChallenge: auth.challenge!,
+    expectedOrigin: env.API_ORIGIN,
+    expectedRPID: env.API_DOMAIN,
+    credential: {
+      id: passkey.credentialId,
+      publicKey: passkey.publicKey,
+      counter: passkey.counter,
+    },
+  });
+
+  const verified = verification.verified;
+  if (!verified) {
+    throw new Error("No verified exists");
+  }
+
+  const newPasskey = structuredClone(passkey);
+  passkey.counter = verification.authenticationInfo.newCounter;
+
+  return {
+    ...auth,
+    passkeys: [newPasskey],
   };
 };
 
