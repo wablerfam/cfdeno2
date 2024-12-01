@@ -75,7 +75,7 @@ export const AuthSchema = v.object({
     id: v.string(),
     origin: v.string(),
   }),
-  passkeys: v.union([v.array(PasskeySchema), v.null()]),
+  passkeys: v.array(PasskeySchema),
   challenge: v.union([v.string(), v.null()]),
   registration: v.union([
     v.object({

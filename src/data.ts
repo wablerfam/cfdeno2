@@ -44,7 +44,7 @@ export const AuthUserName = (auth: { userName: Auth["userName"]; rp: Auth["rp"] 
   return {
     userName: auth.userName,
     rp: auth.rp,
-    passkeys: null,
+    passkeys: [],
     challenge: null,
     registration: null,
     authorization: null,
@@ -57,7 +57,7 @@ export const AuthUserNameWitRregistrationResponse = (
   return {
     userName: auth.userName,
     rp: auth.rp,
-    passkeys: null,
+    passkeys: [],
     challenge: null,
     registration: {
       options: null,
@@ -73,7 +73,7 @@ export const AuthUserNameWithAuthenticationResponse = (
   return {
     userName: auth.userName,
     rp: auth.rp,
-    passkeys: null,
+    passkeys: [],
     challenge: null,
     registration: null,
     authorization: {
@@ -106,7 +106,7 @@ export const setAuthRegistrationOptions = async (auth: Auth): Promise<Auth> => {
     rpName: auth.rp.name,
     rpID: auth.rp.id,
     userName: auth.userName,
-    excludeCredentials: auth.passkeys!.map((passkey) => ({ id: passkey.credentialId })),
+    excludeCredentials: auth.passkeys.map((passkey) => ({ id: passkey.credentialId })),
     authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
   });
 
@@ -147,7 +147,7 @@ export const setAuthCredentialPasskey = async (auth: Auth): Promise<Auth> => {
 export const setAuthAuthorizationOptions = async (auth: Auth): Promise<Auth> => {
   const options = await generateAuthenticationOptions({
     rpID: auth.rp.id,
-    allowCredentials: auth.passkeys!.map((passkey) => ({
+    allowCredentials: auth.passkeys.map((passkey) => ({
       id: passkey.credentialId,
     })),
   });
@@ -163,7 +163,7 @@ export const setAuthAuthorizationOptions = async (auth: Auth): Promise<Auth> => 
 };
 
 export const setAuthVerifiedPasskey = async (auth: Auth): Promise<Auth> => {
-  const passkey = auth.passkeys!.find(
+  const passkey = auth.passkeys.find(
     ({ credentialId }) => credentialId === auth.authorization!.response!.id,
   );
   if (!passkey) {
@@ -197,12 +197,12 @@ export const setAuthVerifiedPasskey = async (auth: Auth): Promise<Auth> => {
 };
 
 export const addAuthPasskey = async (auth: Auth): Promise<Auth> => {
-  await kv.set(["passkey", auth.userName!, auth.passkeys![0].id], auth.passkeys![0]);
+  await kv.set(["passkey", auth.userName, auth.passkeys[0].id], auth.passkeys[0]);
   return auth;
 };
 
 export const addAuthChallenge = async (auth: Auth): Promise<Auth> => {
-  await kv.set(["challenge", auth.userName!], auth.challenge);
+  await kv.set(["challenge", auth.userName], auth.challenge);
   return auth;
 };
 
