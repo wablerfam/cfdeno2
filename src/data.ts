@@ -1,7 +1,9 @@
 import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
+import { STATUS_CODE } from "@std/http";
 import * as v from "@valibot/valibot";
 
 import { env } from "./env.ts";
+import { DataError } from "./error.ts";
 import { Auth, AuthSchema, Passkey, Room, Session } from "./schema.ts";
 
 export const kv = await Deno.openKv(env.DATABASE_URL ?? undefined);
@@ -83,7 +85,7 @@ export const setAuthPasskeys = async (auth: Auth): Promise<Auth> => {
 export const setAuthChallenge = async (auth: Auth): Promise<Auth> => {
   const entry = await kv.get<Auth["challenge"]>(["challenge", auth.userName]);
   if (!entry.value) {
-    throw new Error("not found");
+    throw new DataError(STATUS_CODE.NotFound, "not found challenge");
   }
 
   return {
@@ -120,7 +122,7 @@ export const setAuthCredentialPasskey = async (auth: Auth): Promise<Auth> => {
 
   const registrationInfo = verification.registrationInfo;
   if (!registrationInfo) {
-    throw new Error("not found");
+    throw new DataError(STATUS_CODE.NotFound, "not found registrationInfo");
   }
 
   const credential = registrationInfo.credential;
@@ -161,7 +163,7 @@ export const setAuthVerifiedPasskey = async (auth: Auth): Promise<Auth> => {
     ({ credentialId }) => credentialId === validatedAuth.authorizationResponse.id,
   );
   if (!passkey) {
-    throw new Error("No passkey exists");
+    throw new DataError(STATUS_CODE.NotFound, "not found passkey");
   }
 
   const verification = await verifyAuthenticationResponse({
@@ -178,7 +180,7 @@ export const setAuthVerifiedPasskey = async (auth: Auth): Promise<Auth> => {
 
   const verified = verification.verified;
   if (!verified) {
-    throw new Error("No verified exists");
+    throw new DataError(STATUS_CODE.NotFound, "not found verified");
   }
 
   const newPasskey = structuredClone(passkey);
@@ -203,7 +205,7 @@ export const addAuthChallenge = async (auth: Auth): Promise<Auth> => {
 export const setSession = async (session: Session): Promise<Session> => {
   const entry = await kv.get<Session>(["session", session.id]);
   if (!entry.value) {
-    throw new Error("not found");
+    throw new DataError(STATUS_CODE.NotFound, "not found session");
   }
 
   return {

@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import { serveStatic } from "hono/deno";
 import { HTTPException } from "hono/http-exception";
+import { StatusCode } from "hono/utils/http-status";
 
 import { Top } from "./App.tsx";
 import {
@@ -24,6 +25,7 @@ import {
   setSession,
 } from "./data.ts";
 import { env } from "./env.ts";
+import { DataError } from "./error.ts";
 import { LogTimer } from "./log.ts";
 import { Auth, Session } from "./schema.ts";
 
@@ -60,7 +62,12 @@ export const auth = new Hono().basePath("/auth")
 
     const result = Try(async () => await wf.done()).result;
     if (result.type === "Err") {
-      throw new HTTPException(500, { message: "server error" });
+      const err = result.error;
+      if (err instanceof DataError) {
+        throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
+      } else {
+        throw new HTTPException(500, { message: "unhandled error", cause: err });
+      }
     }
     const value = await result.value;
     return c.json({ status: "success", options: value.registrationOptions });
@@ -76,9 +83,13 @@ export const auth = new Hono().basePath("/auth")
 
     const result = Try(async () => await wf.done()).result;
     if (result.type === "Err") {
-      throw new HTTPException(500, { message: "server error" });
+      const err = result.error;
+      if (err instanceof DataError) {
+        throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
+      } else {
+        throw new HTTPException(500, { message: "unhandled error", cause: err });
+      }
     }
-
     return c.json({ verified: true });
   })
   .get("/assertion/option", async (c) => {
@@ -92,7 +103,12 @@ export const auth = new Hono().basePath("/auth")
 
     const result = Try(async () => await wf.done()).result;
     if (result.type === "Err") {
-      throw new HTTPException(500, { message: "server error" });
+      const err = result.error;
+      if (err instanceof DataError) {
+        throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
+      } else {
+        throw new HTTPException(500, { message: "unhandled error", cause: err });
+      }
     }
     const value = await result.value;
     return c.json({ status: "success", options: value.authorizationOptions });
@@ -129,9 +145,13 @@ export const auth = new Hono().basePath("/auth")
 
     const result = Try(async () => await wf.done()).result;
     if (result.type === "Err") {
-      throw new HTTPException(500, { message: "server error" });
+      const err = result.error;
+      if (err instanceof DataError) {
+        throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
+      } else {
+        throw new HTTPException(500, { message: "unhandled error", cause: err });
+      }
     }
-
     return c.json({ verified: true });
   });
 
