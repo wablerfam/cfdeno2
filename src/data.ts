@@ -1,5 +1,4 @@
 import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
-import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
 import * as v from "@valibot/valibot";
 
 import { env } from "./env.ts";
@@ -50,7 +49,7 @@ export const AuthUserName = (auth: { userName: Auth["userName"]; rp: Auth["rp"] 
 };
 
 export const AuthUserNameWitRregistrationResponse = (
-  auth: { userName: Auth["userName"]; rp: Auth["rp"]; response: RegistrationResponseJSON },
+  auth: { userName: Auth["userName"]; rp: Auth["rp"]; response: Auth["registrationResponse"] },
 ): Auth => {
   return {
     userName: auth.userName,
@@ -61,7 +60,7 @@ export const AuthUserNameWitRregistrationResponse = (
 };
 
 export const AuthUserNameWithAuthenticationResponse = (
-  auth: { userName: Auth["userName"]; rp: Auth["rp"]; response: AuthenticationResponseJSON },
+  auth: { userName: Auth["userName"]; rp: Auth["rp"]; response: Auth["authorizationResponse"] },
 ): Auth => {
   return {
     userName: auth.userName,
@@ -83,9 +82,13 @@ export const setAuthPasskeys = async (auth: Auth): Promise<Auth> => {
 
 export const setAuthChallenge = async (auth: Auth): Promise<Auth> => {
   const entry = await kv.get<Auth["challenge"]>(["challenge", auth.userName]);
+  if (!entry.value) {
+    throw new Error("not found");
+  }
+
   return {
     ...auth,
-    challenge: entry.value!,
+    challenge: entry.value,
   };
 };
 
@@ -115,7 +118,12 @@ export const setAuthCredentialPasskey = async (auth: Auth): Promise<Auth> => {
     expectedRPID: validatedAuth.rp.id,
   });
 
-  const { credential } = verification.registrationInfo!;
+  const registrationInfo = verification.registrationInfo;
+  if (!registrationInfo) {
+    throw new Error("not found");
+  }
+
+  const credential = registrationInfo.credential;
 
   return {
     ...auth,
@@ -194,10 +202,14 @@ export const addAuthChallenge = async (auth: Auth): Promise<Auth> => {
 
 export const setSession = async (session: Session): Promise<Session> => {
   const entry = await kv.get<Session>(["session", session.id]);
+  if (!entry.value) {
+    throw new Error("not found");
+  }
+
   return {
     id: session.id,
-    userName: entry.value!.userName,
-    expirationTtl: entry.value!.expirationTtl,
+    userName: entry.value.userName,
+    expirationTtl: entry.value.expirationTtl,
   };
 };
 
