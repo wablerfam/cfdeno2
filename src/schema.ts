@@ -1,3 +1,9 @@
+import {
+  AuthenticationResponseJSON,
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+  RegistrationResponseJSON,
+} from "@simplewebauthn/types";
 import * as v from "@valibot/valibot";
 
 const IdSchema = v.pipe(v.string(), v.ulid());
@@ -34,12 +40,57 @@ export const PasskeySchema = v.object({
 
 export type Passkey = v.InferOutput<typeof PasskeySchema>;
 
+export const PublicKeyCredentialCreationOptionsSchema = v.custom<PublicKeyCredentialCreationOptionsJSON>((data) => {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+  return true;
+});
+
+export const RegistrationResponseSchema = v.custom<RegistrationResponseJSON>((data) => {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+  return true;
+});
+
+export const PublicKeyCredentialRequestOptionsSchema = v.custom<PublicKeyCredentialRequestOptionsJSON>((data) => {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+  return true;
+});
+
+export const AuthenticationResponseSchema = v.custom<AuthenticationResponseJSON>((data) => {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+  return true;
+});
+
 export const AuthSchema = v.object({
   userName: v.string(),
+  rp: v.object({
+    name: v.string(),
+    id: v.string(),
+    origin: v.optional(v.string()),
+  }),
   passkeys: v.union([v.array(PasskeySchema), v.null()]),
   challenge: v.union([v.string(), v.null()]),
-  authentication: v.union([v.unknown(), v.null()]),
-  authorization: v.union([v.unknown(), v.null()]),
+  authentication: v.union([
+    v.object({
+      options: v.union([PublicKeyCredentialCreationOptionsSchema, v.null()]),
+      response: v.union([RegistrationResponseSchema, v.null()]),
+    }),
+    v.null(),
+  ]),
+  authorization: v.union([
+    v.object({
+      options: v.union([PublicKeyCredentialRequestOptionsSchema, v.null()]),
+      response: v.union([AuthenticationResponseSchema, v.null()]),
+    }),
+    v.null(),
+  ]),
 });
 
 export type Auth = v.InferOutput<typeof AuthSchema>;

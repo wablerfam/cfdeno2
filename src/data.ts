@@ -1,3 +1,5 @@
+import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
+
 import { env } from "./env.ts";
 import { Auth, Passkey, Room, Session } from "./schema.ts";
 
@@ -37,13 +39,46 @@ export const addRoomLog = async (room: Room): Promise<Room> => {
   return room;
 };
 
-export const AuthUserName = (userName: string): Auth => {
+export const AuthUserName = (auth: { userName: Auth["userName"]; rp: Auth["rp"] }): Auth => {
   return {
-    userName: userName,
+    userName: auth.userName,
+    rp: auth.rp,
     passkeys: null,
     challenge: null,
     authentication: null,
     authorization: null,
+  };
+};
+
+export const AuthUserNameWithAuthenticationResponse = (
+  auth: { userName: Auth["userName"]; rp: Auth["rp"]; response: RegistrationResponseJSON },
+): Auth => {
+  return {
+    userName: auth.userName,
+    rp: auth.rp,
+    passkeys: null,
+    challenge: null,
+    authentication: {
+      options: null,
+      response: auth.response,
+    },
+    authorization: null,
+  };
+};
+
+export const AuthUserNameWithAuthorizationResponse = (
+  auth: { userName: Auth["userName"]; rp: Auth["rp"]; response: AuthenticationResponseJSON },
+): Auth => {
+  return {
+    userName: auth.userName,
+    rp: auth.rp,
+    passkeys: null,
+    challenge: null,
+    authentication: null,
+    authorization: {
+      options: null,
+      response: auth.response,
+    },
   };
 };
 
