@@ -1,8 +1,9 @@
 import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
 import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
+import * as v from "@valibot/valibot";
 
 import { env } from "./env.ts";
-import { Auth, Passkey, Room, Session } from "./schema.ts";
+import { Auth, AuthenticationResponseSchema, AuthSchema, Passkey, RegistrationResponseSchema, Room, Session } from "./schema.ts";
 
 export const kv = await Deno.openKv(env.DATABASE_URL ?? undefined);
 
@@ -84,7 +85,7 @@ export const AuthUserNameWithAuthenticationResponse = (
 };
 
 export const setAuthPasskeys = async (auth: Auth): Promise<Auth> => {
-  const entries = kv.list<Passkey>({ prefix: ["passkey", auth.userName!] });
+  const entries = kv.list<Passkey>({ prefix: ["passkey", auth.userName] });
   const passkeys: Auth["passkeys"] = [];
   for await (const entry of entries) passkeys.push(entry.value);
   return {
@@ -94,7 +95,7 @@ export const setAuthPasskeys = async (auth: Auth): Promise<Auth> => {
 };
 
 export const setAuthChallenge = async (auth: Auth): Promise<Auth> => {
-  const entry = await kv.get<Auth["challenge"]>(["challenge", auth.userName!]);
+  const entry = await kv.get<Auth["challenge"]>(["challenge", auth.userName]);
   return {
     ...auth,
     challenge: entry.value,
@@ -121,11 +122,13 @@ export const setAuthRegistrationOptions = async (auth: Auth): Promise<Auth> => {
 };
 
 export const setAuthCredentialPasskey = async (auth: Auth): Promise<Auth> => {
+  const validatedRegistrationResponse = v.parse(RegistrationResponseSchema, auth.registration?.response);
+
   const verification = await verifyRegistrationResponse({
-    response: auth.registration!.response!,
+    response: validatedRegistrationResponse,
     expectedChallenge: auth.challenge!,
-    expectedOrigin: env.API_ORIGIN,
-    expectedRPID: env.API_DOMAIN,
+    expectedOrigin: auth.rp.origin,
+    expectedRPID: auth.rp.id,
   });
 
   const { credential } = verification.registrationInfo!;
@@ -163,16 +166,22 @@ export const setAuthAuthorizationOptions = async (auth: Auth): Promise<Auth> => 
 };
 
 export const setAuthVerifiedPasskey = async (auth: Auth): Promise<Auth> => {
+  const validatedAuthenticationResponse = v.parse(AuthenticationResponseSchema, auth.authorization?.response);
+
+  if (!auth.challenge) {
+    throw new Error("No challenge exists");
+  }
+
   const passkey = auth.passkeys.find(
-    ({ credentialId }) => credentialId === auth.authorization!.response!.id,
+    ({ credentialId }) => credentialId === validatedAuthenticationResponse.id,
   );
   if (!passkey) {
     throw new Error("No passkey exists");
   }
 
   const verification = await verifyAuthenticationResponse({
-    response: auth.authorization!.response!,
-    expectedChallenge: auth.challenge!,
+    response: validatedAuthenticationResponse,
+    expectedChallenge: auth.challenge,
     expectedOrigin: env.API_ORIGIN,
     expectedRPID: env.API_DOMAIN,
     credential: {
@@ -208,7 +217,11 @@ export const addAuthChallenge = async (auth: Auth): Promise<Auth> => {
 
 export const setSession = async (session: Session): Promise<Session> => {
   const entry = await kv.get<Session>(["session", session.id]);
-  return entry.value!;
+  return {
+    id: session.id,
+    userName: entry.value!.userName,
+    expirationTtl: entry.value!.expirationTtl,
+  };
 };
 
 export const addSession = async (session: Session): Promise<Session> => {
