@@ -25,7 +25,7 @@ import {
 } from "./data.ts";
 import { env } from "./env.ts";
 import { LogTimer } from "./log.ts";
-import { Session } from "./schema.ts";
+import { Auth, Session } from "./schema.ts";
 
 export const app = new Hono();
 
@@ -42,11 +42,17 @@ app.get("/", (c) => {
   return c.html(<Top messages={messages} />);
 });
 
+const rp: Auth["rp"] = {
+  name: "My WebAuthn App",
+  id: env.API_DOMAIN,
+  origin: env.API_ORIGIN,
+};
+
 export const auth = new Hono().basePath("/auth")
   .get("/attestation/option", async (c) => {
     const { userName } = c.req.query();
 
-    const wf = Do({ userName: userName, rp: { name: "My WebAuthn App", id: env.API_DOMAIN } })
+    const wf = Do({ userName: userName, rp: rp })
       .pipe(AuthUserName)
       .pipeAwait(setAuthPasskeys)
       .pipeAwait(setAuthRegistrationOptions)
@@ -62,7 +68,7 @@ export const auth = new Hono().basePath("/auth")
   .post("/attestation/result", async (c) => {
     const { userName, body } = await c.req.json();
 
-    const wf = Do({ userName: userName, rp: { name: "My WebAuthn App", id: env.API_DOMAIN }, response: body })
+    const wf = Do({ userName: userName, rp: rp, response: body })
       .pipe(AuthUserNameWitRregistrationResponse)
       .pipeAwait(setAuthChallenge)
       .pipeAwait(setAuthCredentialPasskey)
@@ -78,7 +84,7 @@ export const auth = new Hono().basePath("/auth")
   .get("/assertion/option", async (c) => {
     const { userName } = c.req.query();
 
-    const wf = Do({ userName: userName, rp: { name: "My WebAuthn App", id: env.API_DOMAIN } })
+    const wf = Do({ userName: userName, rp: rp })
       .pipe(AuthUserName)
       .pipeAwait(setAuthPasskeys)
       .pipeAwait(setAuthAuthorizationOptions)
@@ -94,7 +100,7 @@ export const auth = new Hono().basePath("/auth")
   .post("/assertion/result", async (c) => {
     const { userName, body } = await c.req.json();
 
-    const wf = Do({ userName: userName, rp: { name: "My WebAuthn App", id: env.API_DOMAIN }, response: body })
+    const wf = Do({ userName: userName, rp: rp, response: body })
       .pipe(AuthUserNameWithAuthenticationResponse)
       .pipeAwait(setAuthChallenge)
       .pipeAwait(setAuthPasskeys)
