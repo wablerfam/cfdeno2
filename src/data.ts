@@ -3,7 +3,7 @@ import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simpleweb
 import * as v from "@valibot/valibot";
 
 import { env } from "./env.ts";
-import { Auth, AuthenticationResponseSchema, AuthSchema, Passkey, RegistrationResponseSchema, Room, Session } from "./schema.ts";
+import { Auth, AuthSchema, Passkey, Room, Session } from "./schema.ts";
 
 export const kv = await Deno.openKv(env.DATABASE_URL ?? undefined);
 
@@ -46,9 +46,6 @@ export const AuthUserName = (auth: { userName: Auth["userName"]; rp: Auth["rp"] 
     userName: auth.userName,
     rp: auth.rp,
     passkeys: [],
-    challenge: null,
-    registration: null,
-    authorization: null,
   };
 };
 
@@ -59,12 +56,7 @@ export const AuthUserNameWitRregistrationResponse = (
     userName: auth.userName,
     rp: auth.rp,
     passkeys: [],
-    challenge: null,
-    registration: {
-      options: null,
-      response: auth.response,
-    },
-    authorization: null,
+    registrationResponse: auth.response,
   };
 };
 
@@ -75,12 +67,7 @@ export const AuthUserNameWithAuthenticationResponse = (
     userName: auth.userName,
     rp: auth.rp,
     passkeys: [],
-    challenge: null,
-    registration: null,
-    authorization: {
-      options: null,
-      response: auth.response,
-    },
+    authorizationResponse: auth.response,
   };
 };
 
@@ -98,7 +85,7 @@ export const setAuthChallenge = async (auth: Auth): Promise<Auth> => {
   const entry = await kv.get<Auth["challenge"]>(["challenge", auth.userName]);
   return {
     ...auth,
-    challenge: entry.value,
+    challenge: entry.value!,
   };
 };
 
@@ -114,21 +101,18 @@ export const setAuthRegistrationOptions = async (auth: Auth): Promise<Auth> => {
   return {
     ...auth,
     challenge: options.challenge,
-    registration: {
-      options: options,
-      response: null,
-    },
+    registrationOptions: options,
   };
 };
 
 export const setAuthCredentialPasskey = async (auth: Auth): Promise<Auth> => {
-  const validatedRegistrationResponse = v.parse(RegistrationResponseSchema, auth.registration?.response);
+  const validatedAuth = v.parse(v.required(v.pick(AuthSchema, ["rp", "challenge", "registrationResponse"])), auth);
 
   const verification = await verifyRegistrationResponse({
-    response: validatedRegistrationResponse,
-    expectedChallenge: auth.challenge!,
-    expectedOrigin: auth.rp.origin,
-    expectedRPID: auth.rp.id,
+    response: validatedAuth.registrationResponse,
+    expectedChallenge: validatedAuth.challenge,
+    expectedOrigin: validatedAuth.rp.origin,
+    expectedRPID: validatedAuth.rp.id,
   });
 
   const { credential } = verification.registrationInfo!;
@@ -158,32 +142,25 @@ export const setAuthAuthorizationOptions = async (auth: Auth): Promise<Auth> => 
   return {
     ...auth,
     challenge: options.challenge,
-    authorization: {
-      options: options,
-      response: null,
-    },
+    authorizationOptions: options,
   };
 };
 
 export const setAuthVerifiedPasskey = async (auth: Auth): Promise<Auth> => {
-  const validatedAuthenticationResponse = v.parse(AuthenticationResponseSchema, auth.authorization?.response);
-
-  if (!auth.challenge) {
-    throw new Error("No challenge exists");
-  }
+  const validatedAuth = v.parse(v.required(v.pick(AuthSchema, ["rp", "challenge", "authorizationResponse"])), auth);
 
   const passkey = auth.passkeys.find(
-    ({ credentialId }) => credentialId === validatedAuthenticationResponse.id,
+    ({ credentialId }) => credentialId === validatedAuth.authorizationResponse.id,
   );
   if (!passkey) {
     throw new Error("No passkey exists");
   }
 
   const verification = await verifyAuthenticationResponse({
-    response: validatedAuthenticationResponse,
-    expectedChallenge: auth.challenge,
-    expectedOrigin: env.API_ORIGIN,
-    expectedRPID: env.API_DOMAIN,
+    response: validatedAuth.authorizationResponse,
+    expectedChallenge: validatedAuth.challenge,
+    expectedOrigin: validatedAuth.rp.origin,
+    expectedRPID: validatedAuth.rp.id,
     credential: {
       id: passkey.credentialId,
       publicKey: passkey.publicKey,

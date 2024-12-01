@@ -76,21 +76,11 @@ export const AuthSchema = v.object({
     origin: v.string(),
   }),
   passkeys: v.array(PasskeySchema),
-  challenge: v.union([v.string(), v.null()]),
-  registration: v.union([
-    v.object({
-      options: v.union([PublicKeyCredentialCreationOptionsSchema, v.null()]),
-      response: v.union([RegistrationResponseSchema, v.null()]),
-    }),
-    v.null(),
-  ]),
-  authorization: v.union([
-    v.object({
-      options: v.union([PublicKeyCredentialRequestOptionsSchema, v.null()]),
-      response: v.union([AuthenticationResponseSchema, v.null()]),
-    }),
-    v.null(),
-  ]),
+  challenge: v.optional(v.string()),
+  registrationOptions: v.optional(PublicKeyCredentialCreationOptionsSchema),
+  registrationResponse: v.optional(RegistrationResponseSchema),
+  authorizationOptions: v.optional(PublicKeyCredentialRequestOptionsSchema),
+  authorizationResponse: v.optional(AuthenticationResponseSchema),
 });
 
 export type Auth = v.InferOutput<typeof AuthSchema>;

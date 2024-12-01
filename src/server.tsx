@@ -63,7 +63,7 @@ export const auth = new Hono().basePath("/auth")
       throw new HTTPException(500, { message: "server error" });
     }
     const value = await result.value;
-    return c.json({ status: "success", options: value.registration?.options });
+    return c.json({ status: "success", options: value.registrationOptions });
   })
   .post("/attestation/result", async (c) => {
     const { userName, body } = await c.req.json();
@@ -78,7 +78,7 @@ export const auth = new Hono().basePath("/auth")
     if (result.type === "Err") {
       throw new HTTPException(500, { message: "server error" });
     }
-    // const value = await result.value;
+
     return c.json({ verified: true });
   })
   .get("/assertion/option", async (c) => {
@@ -95,7 +95,7 @@ export const auth = new Hono().basePath("/auth")
       throw new HTTPException(500, { message: "server error" });
     }
     const value = await result.value;
-    return c.json({ status: "success", options: value.authorization?.options });
+    return c.json({ status: "success", options: value.authorizationOptions });
   })
   .post("/assertion/result", async (c) => {
     const { userName, body } = await c.req.json();
@@ -131,7 +131,7 @@ export const auth = new Hono().basePath("/auth")
     if (result.type === "Err") {
       throw new HTTPException(500, { message: "server error" });
     }
-    // const value = await result.value;
+
     return c.json({ verified: true });
   });
 
