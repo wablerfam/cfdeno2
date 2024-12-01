@@ -1,6 +1,6 @@
+import { hc } from "@hono/hono/client";
 import { type Context, register } from "@kt3k/cell";
 import * as SimpleWebAuthnBrowser from "@simplewebauthn/browser";
-import { hc } from "hono/client";
 import { ResultAsync } from "neverthrow";
 
 import { AuthAppType } from "./server.tsx";
