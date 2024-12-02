@@ -2,7 +2,6 @@ import { Hono } from "@hono/hono";
 import { getCookie, setCookie } from "@hono/hono/cookie";
 import { serveStatic } from "@hono/hono/deno";
 import { HTTPException } from "@hono/hono/http-exception";
-import { StatusCode } from "@hono/hono/utils/http-status";
 import { Do } from "@qnighy/metaflow/do";
 import { STATUS_CODE } from "@std/http";
 import { ulid } from "@std/ulid";
@@ -25,7 +24,7 @@ import {
 } from "./data.ts";
 import { env } from "./env.ts";
 import { Auth, Session } from "./schema.ts";
-import { DataError, LogTimer } from "./utils.ts";
+import { logger, LogTimer } from "./utils.ts";
 
 export const app = new Hono();
 
@@ -59,11 +58,8 @@ export const auth = new Hono().basePath("/auth")
       .pipeAwait(addAuthChallenge);
 
     const result = await wf.done().catch((err) => {
-      if (err instanceof DataError) {
-        throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
-      } else {
-        throw new HTTPException(STATUS_CODE.InternalServerError, { message: "unhandled error", cause: err });
-      }
+      logger.error`${err}`;
+      throw new HTTPException(STATUS_CODE.Unauthorized, err);
     });
     return c.json({ status: "success", options: result.registrationOptions }, STATUS_CODE.OK);
   })
@@ -77,11 +73,8 @@ export const auth = new Hono().basePath("/auth")
       .pipeAwait(addAuthPasskey);
 
     const _result = await wf.done().catch((err) => {
-      if (err instanceof DataError) {
-        throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
-      } else {
-        throw new HTTPException(STATUS_CODE.InternalServerError, { message: "unhandled error", cause: err });
-      }
+      logger.error`${err}`;
+      throw new HTTPException(STATUS_CODE.Unauthorized, err);
     });
     return c.json({ verified: true }, STATUS_CODE.Created);
   })
@@ -95,11 +88,8 @@ export const auth = new Hono().basePath("/auth")
       .pipeAwait(addAuthChallenge);
 
     const result = await wf.done().catch((err) => {
-      if (err instanceof DataError) {
-        throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
-      } else {
-        throw new HTTPException(STATUS_CODE.InternalServerError, { message: "unhandled error", cause: err });
-      }
+      logger.error`${err}`;
+      throw new HTTPException(STATUS_CODE.Unauthorized, err);
     });
     return c.json({ status: "success", options: result.authorizationOptions }, STATUS_CODE.OK);
   })
@@ -134,11 +124,8 @@ export const auth = new Hono().basePath("/auth")
       .pipeAwait(addSession);
 
     const _result = await wf.done().catch((err) => {
-      if (err instanceof DataError) {
-        throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
-      } else {
-        throw new HTTPException(STATUS_CODE.InternalServerError, { message: "unhandled error", cause: err });
-      }
+      logger.error`${err}`;
+      throw new HTTPException(STATUS_CODE.Unauthorized, err);
     });
     return c.json({ verified: true }, STATUS_CODE.Created);
   });
