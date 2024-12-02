@@ -35,7 +35,6 @@
     "npm:@types/node@*": "22.5.4",
     "npm:cross-fetch@4": "4.0.0",
     "npm:esbuild@0.24": "0.24.0",
-    "npm:neverthrow@^8.1.1": "8.1.1",
     "npm:tailwindcss@*": "3.4.15_postcss@8.4.49",
     "npm:tailwindcss@^3.4.15": "3.4.15_postcss@8.4.49"
   },
@@ -316,9 +315,6 @@
     },
     "@pkgjs/parseargs@0.11.0": {
       "integrity": "sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg=="
-    },
-    "@rollup/rollup-linux-x64-gnu@4.27.4": {
-      "integrity": "sha512-Ni8mMtfo+o/G7DVtweXXV/Ol2TFf63KYjTtoZ5f078AUgJTmaIJnj4JFU7TK/9SVWTaSJGxPi5zMDgK4w+Ez7Q=="
     },
     "@types/node@22.5.4": {
       "integrity": "sha512-FDuKUJQm/ju9fT/SeX/6+gBzoPzlVCzfzmGkwKvRHQVxi4BntVbyIwf6a4Xn62mrvndLiml6z/UBXIdEVjQLXg==",
@@ -617,12 +613,6 @@
     },
     "nanoid@3.3.7": {
       "integrity": "sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g=="
-    },
-    "neverthrow@8.1.1": {
-      "integrity": "sha512-DpbZ/UDI0B+TxJB1JysXSfi1++3YK2xLBqQLTlRN0b4zxlZ2MoiB+dKKV8dMRzt1fAFjRKDknXOVJgpl+a4Amw==",
-      "dependencies": [
-        "@rollup/rollup-linux-x64-gnu"
-      ]
     },
     "node-fetch@2.7.0": {
       "integrity": "sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==",
@@ -925,7 +915,6 @@
       "jsr:@std/ulid@1",
       "jsr:@valibot/valibot@~0.42.1",
       "npm:esbuild@0.24",
-      "npm:neverthrow@^8.1.1",
       "npm:tailwindcss@^3.4.15"
     ]
   }

@@ -28,7 +28,6 @@
     "@std/ulid": "jsr:@std/ulid@^1.0.0",
     "@valibot/valibot": "jsr:@valibot/valibot@^0.42.1",
     "esbuild": "npm:esbuild@^0.24.0",
-    "neverthrow": "npm:neverthrow@^8.1.1",
     "tailwindcss": "npm:tailwindcss@^3.4.15"
   },
   "deploy": {
