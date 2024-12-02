@@ -1,7 +1,7 @@
 import { denoPlugins } from "@luca/esbuild-deno-loader";
 import * as esbuild from "esbuild";
 
-import { logger } from "./src/log.ts";
+import { logger } from "./src/utils.ts";
 
 const isWatchMode = Deno.args.includes("watch");
 

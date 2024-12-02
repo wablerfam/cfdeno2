@@ -3,8 +3,8 @@ import { STATUS_CODE } from "@std/http";
 import * as v from "@valibot/valibot";
 
 import { env } from "./env.ts";
-import { DataError } from "./error.ts";
 import { Auth, AuthSchema, Passkey, Room, Session } from "./schema.ts";
+import { DataError } from "./utils.ts";
 
 export const kv = await Deno.openKv(env.DATABASE_URL ?? undefined);
 

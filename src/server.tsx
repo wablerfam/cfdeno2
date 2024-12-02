@@ -24,9 +24,8 @@ import {
   setSession,
 } from "./data.ts";
 import { env } from "./env.ts";
-import { DataError } from "./error.ts";
-import { LogTimer } from "./log.ts";
 import { Auth, Session } from "./schema.ts";
+import { DataError, LogTimer } from "./utils.ts";
 
 export const app = new Hono();
 
