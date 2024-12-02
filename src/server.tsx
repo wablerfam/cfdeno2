@@ -4,7 +4,6 @@ import { serveStatic } from "@hono/hono/deno";
 import { HTTPException } from "@hono/hono/http-exception";
 import { StatusCode } from "@hono/hono/utils/http-status";
 import { Do } from "@qnighy/metaflow/do";
-import { Try } from "@qnighy/metaflow/exception";
 import { STATUS_CODE } from "@std/http";
 import { ulid } from "@std/ulid";
 
@@ -60,17 +59,14 @@ export const auth = new Hono().basePath("/auth")
       .pipeAwait(setAuthRegistrationOptions)
       .pipeAwait(addAuthChallenge);
 
-    const result = Try(async () => await wf.done()).result;
-    if (result.type === "Err") {
-      const err = result.error;
+    const result = await wf.done().catch((err) => {
       if (err instanceof DataError) {
         throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
       } else {
-        throw new HTTPException(500, { message: "unhandled error", cause: err });
+        throw new HTTPException(STATUS_CODE.InternalServerError, { message: "unhandled error", cause: err });
       }
-    }
-    const value = await result.value;
-    return c.json({ status: "success", options: value.registrationOptions });
+    });
+    return c.json({ status: "success", options: result.registrationOptions }, STATUS_CODE.OK);
   })
   .post("/attestation/result", async (c) => {
     const { userName, body } = await c.req.json();
@@ -81,16 +77,14 @@ export const auth = new Hono().basePath("/auth")
       .pipeAwait(setAuthCredentialPasskey)
       .pipeAwait(addAuthPasskey);
 
-    const result = Try(async () => await wf.done()).result;
-    if (result.type === "Err") {
-      const err = result.error;
+    const _result = await wf.done().catch((err) => {
       if (err instanceof DataError) {
         throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
       } else {
-        throw new HTTPException(500, { message: "unhandled error", cause: err });
+        throw new HTTPException(STATUS_CODE.InternalServerError, { message: "unhandled error", cause: err });
       }
-    }
-    return c.json({ verified: true });
+    });
+    return c.json({ verified: true }, STATUS_CODE.Created);
   })
   .get("/assertion/option", async (c) => {
     const { userName } = c.req.query();
@@ -101,17 +95,14 @@ export const auth = new Hono().basePath("/auth")
       .pipeAwait(setAuthAuthorizationOptions)
       .pipeAwait(addAuthChallenge);
 
-    const result = Try(async () => await wf.done()).result;
-    if (result.type === "Err") {
-      const err = result.error;
+    const result = await wf.done().catch((err) => {
       if (err instanceof DataError) {
         throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
       } else {
-        throw new HTTPException(500, { message: "unhandled error", cause: err });
+        throw new HTTPException(STATUS_CODE.InternalServerError, { message: "unhandled error", cause: err });
       }
-    }
-    const value = await result.value;
-    return c.json({ status: "success", options: value.authorizationOptions });
+    });
+    return c.json({ status: "success", options: result.authorizationOptions }, STATUS_CODE.OK);
   })
   .post("/assertion/result", async (c) => {
     const { userName, body } = await c.req.json();
@@ -143,16 +134,14 @@ export const auth = new Hono().basePath("/auth")
       })
       .pipeAwait(addSession);
 
-    const result = Try(async () => await wf.done()).result;
-    if (result.type === "Err") {
-      const err = result.error;
+    const _result = await wf.done().catch((err) => {
       if (err instanceof DataError) {
         throw new HTTPException(err.errorCode as StatusCode, { message: err.message });
       } else {
-        throw new HTTPException(500, { message: "unhandled error", cause: err });
+        throw new HTTPException(STATUS_CODE.InternalServerError, { message: "unhandled error", cause: err });
       }
-    }
-    return c.json({ verified: true });
+    });
+    return c.json({ verified: true }, STATUS_CODE.Created);
   });
 
 export type AuthAppType = typeof auth;
